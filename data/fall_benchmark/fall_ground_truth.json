@@ -1,0 +1,56 @@
+{
+  "indoor_fall.mp4": {
+    "type": "POSITIVE_FALL",
+    "environment": "Indoor living room",
+    "camera_angle": "Elevated wall mount (~35 deg)",
+    "total_frames": 67,
+    "fps": 20.0,
+    "fall_frame_range": [
+      55,
+      67
+    ],
+    "description": "Standing person slips, falls sideways onto carpet at frame 55, remains prone until frame 67."
+  },
+  "indoor_normal_adl.mp4": {
+    "type": "NEGATIVE_ADL",
+    "environment": "Indoor living room",
+    "camera_angle": "Elevated wall mount (~35 deg)",
+    "total_frames": 35,
+    "fps": 20.0,
+    "fall_frame_range": null,
+    "description": "Person walks into room, sits down onto chair, reaches forward, stands up, walks out."
+  },
+  "le2i_coffee_fall.mp4": {
+    "type": "POSITIVE_FALL",
+    "environment": "Coffee room / cafeteria (Le2i Benchmark)",
+    "camera_angle": "Room corner CCTV perspective",
+    "total_frames": 215,
+    "fps": 25.0,
+    "fall_frame_range": [
+      100,
+      215
+    ],
+    "description": "Pedestrian walking with cup slips backwards at frame 100, hits floor at 105, remains prone on floor through frame 215."
+  },
+  "le2i_coffee_adl.mp4": {
+    "type": "NEGATIVE_ADL",
+    "environment": "Coffee room / cafeteria (Le2i Benchmark)",
+    "camera_angle": "Room corner CCTV perspective",
+    "total_frames": 347,
+    "fps": 25.0,
+    "fall_frame_range": null,
+    "description": "Pedestrian walks to coffee station, bends down to cabinet, picks up item, leaves normally."
+  },
+  "fall.mp4": {
+    "type": "POSITIVE_FALL",
+    "environment": "Outdoor snow ramp corridor (Repo Baseline)",
+    "camera_angle": "Overhead high-angle entrance surveillance",
+    "total_frames": 306,
+    "fps": 30.0,
+    "fall_frame_range": [
+      220,
+      306
+    ],
+    "description": "Pedestrian walks down slippery ramp, slips and slides down incline at frame 220, remains prone through frame 306."
+  }
+}

@@ -1,0 +1,17 @@
+# Core Computer Vision & Inference
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Polygon & Spatial Geometry
+shapely>=2.0.0
+
+# System, Data & Utilities
+psutil>=5.9.0
+matplotlib>=3.7.0
+pyyaml>=6.0
+
+# Web & Networking for Digital Twin Communication
+websockets>=11.0

@@ -1,0 +1,19 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+# Phase 30 CONTROLLED TUNING CANDIDATE — NOT the production baseline.
+# Do not point configs/config.yaml here without a measured A/B.
+#
+# Evidence (Phase 30): Ultralytics BYTETracker only initializes NEW tracks from the
+# HIGH-score pool (scores >= track_high_thresh), then applies new_track_thresh.
+# Low-score dets can only match EXISTING tracks. On 4917-5, mean conf≈0.13 and
+# boxes are ~7–15px tall — lowering new_track_thresh alone (e.g. 0.12) with
+# track_high_thresh=0.25 still yields ZERO tracks. Both must drop together.
+#
+# WARNING: May increase ID proliferation in dense crowds (measure on 879-38_l).
+
+tracker_type: bytetrack
+track_high_thresh: 0.10     # Must be <= typical far-person conf so dets enter high-score init path
+track_low_thresh: 0.05      # Unchanged (low path still used for association only)
+new_track_thresh: 0.10      # Gate new IDs among unmatched high-score dets
+track_buffer: 60            # Unchanged
+match_thresh: 0.70          # Unchanged
+fuse_score: True

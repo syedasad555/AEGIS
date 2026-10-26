@@ -1,0 +1,12 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# 奔跑检测专用 ByteTrack 配置
+# 针对快速运动+模糊+遮挡场景调优
+
+tracker_type: bytetrack
+track_high_thresh: 0.5      # 第一轮匹配阈值（提高以过滤误检）
+track_low_thresh: 0.1       # 第二轮低分匹配阈值
+new_track_thresh: 0.6       # 新建轨迹最低置信度（提高防 ID 增殖）
+track_buffer: 60            # 丢失后保留帧数（增大以抗遮挡/快速移动）
+match_thresh: 0.85          # 关联 IoU 阈值（提高匹配宽容度）
+fuse_score: True            # 融合检测分数与运动信息（密集场景必开）

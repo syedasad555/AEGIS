@@ -1,0 +1,68 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+
+# IDE / Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude / AI tools
+.claude/
+.codegraph/
+
+# Weights & models
+weights/
+models/
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+
+# Training outputs
+runs/
+
+# Video / image outputs (default ignore)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+
+# Allow sample test videos and icon in assets/
+!assets/*.mp4
+!assets/*.png
+
+# Allow demo GIFs for README
+!assets/demo/*.gif
+
+# Local run outputs
+outputs/*
+!outputs/.gitkeep
+
+# Datasets
+datasets/
+测试视频/
+examples/
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+configs/forbidden_zone.json

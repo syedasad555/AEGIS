@@ -1,0 +1,24 @@
+{
+  "zones": [
+    {
+      "zone_name": "Restricted Zone 1",
+      "polygon": [
+        [300, 200],
+        [600, 200],
+        [600, 500],
+        [300, 500]
+      ],
+      "description": "Example Restricted Zone 1 — Calibrate coordinates using tools/zone_selector.py or the Web UI"
+    },
+    {
+      "zone_name": "Restricted Zone 2",
+      "polygon": [
+        [700, 200],
+        [1000, 200],
+        [1000, 500],
+        [700, 500]
+      ],
+      "description": "Example Restricted Zone 2 — Calibrate coordinates using tools/zone_selector.py or the Web UI"
+    }
+  ]
+}

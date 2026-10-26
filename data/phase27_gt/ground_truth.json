@@ -1,0 +1,4895 @@
+{
+  "suite": "AEGIS Phase 27 ground truth",
+  "iou_eval_threshold": 0.5,
+  "size_bins": {
+    "small": "bbox_height < 60 px",
+    "medium": "60 <= bbox_height < 160 px",
+    "large": "bbox_height >= 160 px"
+  },
+  "manual_method": "Corridor/running/intrusion: high-recall YOLO assist (imgsz=960, conf=0.08) followed by person-like geometric filtering, NMS IoU=0.55, strong-conf recovery, and visual verification of candidate overlays. MOT20 crowded frames: official MOTChallenge pedestrian GT (not re-invented). Intrusion shop-window mannequin/reflection band filtered after visual review.",
+  "limitation": "Manual GT for corridor/running/intrusion is assist-aided and visually verified, not exhaustively pixel-perfect for every occlusion. MOT20 GT is authoritative for crowded scenes. MOT17-02 frames added as official outdoor occlusion GT.",
+  "frames": {
+    "corridor_f0040": {
+      "id": "corridor_f0040",
+      "file": "frames/corridor_f0040.jpg",
+      "width": 632,
+      "height": 480,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            495.2,
+            167.1,
+            589.8,
+            372.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            218.8,
+            287.5,
+            324.2,
+            475.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            281.3,
+            321.6,
+            417.1,
+            477.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            400.2,
+            94.0,
+            427.9,
+            167.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            358.8,
+            97.7,
+            383.1,
+            166.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            377.4,
+            93.4,
+            400.1,
+            159.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            318.1,
+            135.6,
+            350.3,
+            183.7
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            348.8,
+            164.1,
+            394.0,
+            251.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            219.0,
+            140.5,
+            241.2,
+            207.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            317.2,
+            140.6,
+            362.6,
+            245.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            262.0,
+            128.4,
+            279.8,
+            171.6
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "corridor_f0070": {
+      "id": "corridor_f0070",
+      "file": "frames/corridor_f0070.jpg",
+      "width": 632,
+      "height": 480,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            497.9,
+            165.7,
+            589.8,
+            371.7
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            399.7,
+            93.9,
+            428.6,
+            169.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            263.2,
+            141.6,
+            297.4,
+            241.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            219.3,
+            276.1,
+            324.2,
+            474.7
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            359.2,
+            96.8,
+            382.6,
+            167.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            378.0,
+            93.0,
+            400.1,
+            159.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            318.4,
+            135.5,
+            349.7,
+            182.5
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            348.4,
+            165.2,
+            395.7,
+            252.3
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            278.9,
+            309.9,
+            414.0,
+            476.8
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            218.9,
+            132.8,
+            239.8,
+            205.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            316.7,
+            135.4,
+            360.3,
+            245.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            220.7,
+            207.2,
+            279.8,
+            304.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            385.6,
+            161.2,
+            454.2,
+            239.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "corridor_f0100": {
+      "id": "corridor_f0100",
+      "file": "frames/corridor_f0100.jpg",
+      "width": 632,
+      "height": 480,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            527.8,
+            211.5,
+            614.4,
+            360.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            317.1,
+            133.4,
+            345.2,
+            183.9
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            352.6,
+            101.7,
+            383.6,
+            165.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            395.2,
+            97.6,
+            426.1,
+            164.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            220.6,
+            141.7,
+            252.3,
+            196.4
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            372.6,
+            99.3,
+            393.9,
+            160.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            389.8,
+            98.0,
+            414.2,
+            161.0
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            378.5,
+            99.1,
+            454.8,
+            236.3
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            247.2,
+            395.8,
+            328.3,
+            465.8
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            219.4,
+            197.7,
+            329.5,
+            472.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            367.1,
+            97.9,
+            384.8,
+            162.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            379.8,
+            99.9,
+            401.9,
+            160.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "intrusion_f0080": {
+      "id": "intrusion_f0080",
+      "file": "frames/intrusion_f0080.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            212.8,
+            472.5,
+            307.6,
+            705.1
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            670.9,
+            431.8,
+            761.1,
+            690.8
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1658.1,
+            584.1,
+            1773.3,
+            828.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            548.4,
+            430.3,
+            637.6,
+            663.4
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            894.0,
+            345.8,
+            962.8,
+            529.0
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1661.3,
+            254.3,
+            1741.7,
+            467.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            839.8,
+            127.0,
+            887.7,
+            276.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            0.0,
+            403.0,
+            79.1,
+            638.4
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1036.6,
+            126.9,
+            1098.1,
+            274.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1578.2,
+            75.4,
+            1630.0,
+            211.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1080.7,
+            0.0,
+            1122.9,
+            102.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1763.1,
+            466.5,
+            1846.9,
+            699.5
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            83.2,
+            400.8,
+            148.6,
+            616.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            605.1,
+            198.1,
+            663.7,
+            312.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            119.2,
+            434.8,
+            205.8,
+            630.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1348.4,
+            0.0,
+            1397.3,
+            114.3
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            894.4,
+            73.6,
+            948.4,
+            214.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1599.7,
+            427.8,
+            1667.3,
+            546.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1562.5,
+            543.5,
+            1654.5,
+            723.1
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1633.3,
+            432.6,
+            1677.0,
+            564.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1242.0,
+            0.4,
+            1261.8,
+            37.3
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            933.6,
+            40.5,
+            973.1,
+            138.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            0.0,
+            401.8,
+            33.5,
+            644.5
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1559.3,
+            91.4,
+            1591.3,
+            190.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            15.0,
+            268.1,
+            91.6,
+            436.7
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1351.4,
+            0.0,
+            1393.9,
+            63.7
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1600.6,
+            451.2,
+            1642.4,
+            541.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "intrusion_f0130": {
+      "id": "intrusion_f0130",
+      "file": "frames/intrusion_f0130.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            458.6,
+            346.6,
+            546.0,
+            554.8
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1785.5,
+            181.2,
+            1865.5,
+            364.8
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1710.5,
+            428.9,
+            1827.3,
+            647.4
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            853.3,
+            333.0,
+            937.0,
+            562.1
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1066.8,
+            270.6,
+            1132.1,
+            441.8
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            764.7,
+            338.6,
+            848.5,
+            552.9
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            927.9,
+            170.0,
+            997.3,
+            342.1
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            52.5,
+            304.1,
+            131.9,
+            508.6
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            140.8,
+            312.4,
+            229.6,
+            525.5
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1403.9,
+            15.7,
+            1454.1,
+            138.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            993.8,
+            24.4,
+            1060.0,
+            162.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1588.7,
+            40.4,
+            1655.5,
+            161.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            295.9,
+            353.1,
+            378.5,
+            538.0
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            816.0,
+            82.3,
+            865.0,
+            201.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            254.7,
+            322.1,
+            324.7,
+            517.4
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1065.1,
+            130.2,
+            1115.3,
+            270.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1506.4,
+            555.7,
+            1608.8,
+            701.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1468.2,
+            714.2,
+            1557.4,
+            884.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1587.3,
+            51.8,
+            1625.7,
+            152.8
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1153.6,
+            0.7,
+            1189.2,
+            73.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            765.7,
+            144.4,
+            826.0,
+            299.0
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            767.0,
+            141.1,
+            821.2,
+            219.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1486.3,
+            668.3,
+            1574.1,
+            839.6
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            758.4,
+            354.2,
+            801.7,
+            539.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "intrusion_f0180": {
+      "id": "intrusion_f0180",
+      "file": "frames/intrusion_f0180.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            1737.3,
+            306.5,
+            1816.7,
+            503.0
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1001.0,
+            254.3,
+            1075.8,
+            470.4
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1190.8,
+            214.8,
+            1265.4,
+            377.5
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1096.7,
+            0.0,
+            1149.5,
+            121.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            829.1,
+            229.5,
+            905.8,
+            410.0
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            301.4,
+            258.8,
+            365.7,
+            454.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1272.6,
+            134.8,
+            1356.2,
+            290.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            232.2,
+            244.7,
+            305.4,
+            443.5
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            918.5,
+            263.1,
+            996.2,
+            458.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            662.3,
+            250.7,
+            740.4,
+            440.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1477.2,
+            39.6,
+            1530.6,
+            173.8
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1050.9,
+            2.0,
+            1097.4,
+            113.7
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            434.2,
+            282.1,
+            499.4,
+            449.7
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            897.1,
+            98.8,
+            957.0,
+            233.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            399.9,
+            255.0,
+            459.9,
+            435.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1616.1,
+            6.0,
+            1675.9,
+            116.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            698.7,
+            95.2,
+            751.1,
+            244.1
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1447.0,
+            711.2,
+            1566.7,
+            1072.3
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1705.6,
+            20.2,
+            1752.6,
+            152.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            14.3,
+            272.0,
+            95.4,
+            436.9
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            349.0,
+            153.8,
+            421.0,
+            312.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1615.1,
+            16.2,
+            1646.6,
+            113.5
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1272.2,
+            0.0,
+            1331.7,
+            61.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            1448.8,
+            710.7,
+            1568.2,
+            879.7
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            867.2,
+            67.7,
+            926.2,
+            143.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "running_f0080": {
+      "id": "running_f0080",
+      "file": "frames/running_f0080.jpg",
+      "width": 632,
+      "height": 480,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            495.2,
+            166.8,
+            590.0,
+            371.1
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            399.6,
+            93.7,
+            428.0,
+            168.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            318.2,
+            134.7,
+            350.3,
+            183.0
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            378.2,
+            93.2,
+            399.4,
+            159.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            359.4,
+            97.2,
+            382.0,
+            168.0
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            348.0,
+            164.8,
+            394.6,
+            251.4
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            285.3,
+            177.3,
+            322.8,
+            290.8
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            218.7,
+            143.8,
+            239.8,
+            204.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            248.0,
+            256.2,
+            331.4,
+            364.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            314.0,
+            135.4,
+            358.6,
+            248.0
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            220.5,
+            268.0,
+            413.8,
+            476.2
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            295.9,
+            305.7,
+            334.0,
+            363.3
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "running_f0110": {
+      "id": "running_f0110",
+      "file": "frames/running_f0110.jpg",
+      "width": 632,
+      "height": 480,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            559.5,
+            153.3,
+            631.7,
+            326.4
+          ],
+          "size_class": "large",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            327.8,
+            145.6,
+            378.2,
+            240.9
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            389.8,
+            99.4,
+            421.7,
+            163.0
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            312.6,
+            129.5,
+            338.6,
+            182.5
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            219.3,
+            137.9,
+            251.8,
+            189.5
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            364.9,
+            118.5,
+            400.1,
+            165.6
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            372.3,
+            166.7,
+            395.1,
+            229.0
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            358.9,
+            118.7,
+            380.4,
+            164.2
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "running_f0140": {
+      "id": "running_f0140",
+      "file": "frames/running_f0140.jpg",
+      "width": 632,
+      "height": 480,
+      "gt_source": "manual_visual_verification",
+      "boxes": [
+        {
+          "bbox": [
+            333.1,
+            117.5,
+            372.4,
+            214.7
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            552.2,
+            135.3,
+            631.4,
+            248.2
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            298.5,
+            109.9,
+            326.9,
+            158.8
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            358.5,
+            99.5,
+            401.8,
+            207.6
+          ],
+          "size_class": "medium",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        },
+        {
+          "bbox": [
+            333.7,
+            117.6,
+            358.8,
+            162.2
+          ],
+          "size_class": "small",
+          "annotator": "manual_verified_assist",
+          "notes": "Human-reviewed NMS-filtered YOLO assist; false positives removed by geometric+NMS rules and visual check"
+        }
+      ]
+    },
+    "mot20_f0030": {
+      "id": "mot20_f0030",
+      "file": "frames/mot20_f0030.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "MOT20-01 official (CC BY-NC-SA 4.0)",
+      "frame_index": 30,
+      "boxes": [
+        {
+          "bbox": [
+            279.0,
+            809.0,
+            409.0,
+            1080.0
+          ],
+          "size_class": "large",
+          "track_id": 1,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            413.0,
+            807.0,
+            532.0,
+            1081.0
+          ],
+          "size_class": "large",
+          "track_id": 2,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            457.0,
+            784.0,
+            553.0,
+            1035.0
+          ],
+          "size_class": "large",
+          "track_id": 3,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1785.0,
+            848.0,
+            1886.0,
+            1080.0
+          ],
+          "size_class": "large",
+          "track_id": 4,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            661.0,
+            737.0,
+            762.0,
+            969.0
+          ],
+          "size_class": "large",
+          "track_id": 5,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            749.0,
+            746.0,
+            847.0,
+            963.0
+          ],
+          "size_class": "large",
+          "track_id": 6,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1486.0,
+            677.0,
+            1582.0,
+            910.0
+          ],
+          "size_class": "large",
+          "track_id": 7,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1519.0,
+            676.0,
+            1610.0,
+            896.0
+          ],
+          "size_class": "large",
+          "track_id": 8,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1240.0,
+            622.0,
+            1298.0,
+            804.0
+          ],
+          "size_class": "large",
+          "track_id": 9,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1513.0,
+            552.0,
+            1566.0,
+            652.0
+          ],
+          "size_class": "medium",
+          "track_id": 10,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1352.0,
+            502.0,
+            1405.0,
+            584.0
+          ],
+          "size_class": "medium",
+          "track_id": 11,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1377.0,
+            659.0,
+            1457.0,
+            860.0
+          ],
+          "size_class": "large",
+          "track_id": 12,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1494.0,
+            642.0,
+            1575.0,
+            821.0
+          ],
+          "size_class": "large",
+          "track_id": 13,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1239.0,
+            657.0,
+            1319.0,
+            863.0
+          ],
+          "size_class": "large",
+          "track_id": 14,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1108.0,
+            657.0,
+            1183.0,
+            859.0
+          ],
+          "size_class": "large",
+          "track_id": 15,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1447.0,
+            614.0,
+            1523.0,
+            797.0
+          ],
+          "size_class": "large",
+          "track_id": 16,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            786.0,
+            509.0,
+            832.0,
+            615.0
+          ],
+          "size_class": "medium",
+          "track_id": 17,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            835.0,
+            478.0,
+            885.0,
+            599.0
+          ],
+          "size_class": "medium",
+          "track_id": 18,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            792.0,
+            520.0,
+            840.0,
+            654.0
+          ],
+          "size_class": "medium",
+          "track_id": 19,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            837.0,
+            508.0,
+            897.0,
+            642.0
+          ],
+          "size_class": "medium",
+          "track_id": 20,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            882.0,
+            488.0,
+            931.0,
+            610.0
+          ],
+          "size_class": "medium",
+          "track_id": 21,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            948.0,
+            485.0,
+            996.0,
+            616.0
+          ],
+          "size_class": "medium",
+          "track_id": 22,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            890.0,
+            504.0,
+            951.0,
+            640.0
+          ],
+          "size_class": "medium",
+          "track_id": 23,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            807.0,
+            567.0,
+            888.0,
+            746.0
+          ],
+          "size_class": "large",
+          "track_id": 24,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1200.0,
+            597.0,
+            1256.0,
+            752.0
+          ],
+          "size_class": "medium",
+          "track_id": 25,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            889.0,
+            572.0,
+            950.0,
+            744.0
+          ],
+          "size_class": "large",
+          "track_id": 26,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            938.0,
+            582.0,
+            998.0,
+            740.0
+          ],
+          "size_class": "medium",
+          "track_id": 27,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            979.0,
+            559.0,
+            1043.0,
+            704.0
+          ],
+          "size_class": "medium",
+          "track_id": 28,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1043.0,
+            562.0,
+            1105.0,
+            703.0
+          ],
+          "size_class": "medium",
+          "track_id": 29,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1036.0,
+            556.0,
+            1090.0,
+            684.0
+          ],
+          "size_class": "medium",
+          "track_id": 30,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            944.0,
+            602.0,
+            1015.0,
+            770.0
+          ],
+          "size_class": "large",
+          "track_id": 31,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1008.0,
+            638.0,
+            1060.0,
+            769.0
+          ],
+          "size_class": "medium",
+          "track_id": 32,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1029.0,
+            616.0,
+            1101.0,
+            809.0
+          ],
+          "size_class": "large",
+          "track_id": 33,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1023.0,
+            655.0,
+            1103.0,
+            864.0
+          ],
+          "size_class": "large",
+          "track_id": 34,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1099.0,
+            552.0,
+            1157.0,
+            704.0
+          ],
+          "size_class": "medium",
+          "track_id": 35,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1133.0,
+            584.0,
+            1198.0,
+            751.0
+          ],
+          "size_class": "large",
+          "track_id": 36,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1114.0,
+            640.0,
+            1194.0,
+            806.0
+          ],
+          "size_class": "large",
+          "track_id": 37,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1723.0,
+            813.0,
+            1835.0,
+            1030.0
+          ],
+          "size_class": "large",
+          "track_id": 41,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1328.0,
+            525.0,
+            1374.0,
+            596.0
+          ],
+          "size_class": "medium",
+          "track_id": 75,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1249.0,
+            468.0,
+            1303.0,
+            566.0
+          ],
+          "size_class": "medium",
+          "track_id": 77,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1287.0,
+            463.0,
+            1350.0,
+            567.0
+          ],
+          "size_class": "medium",
+          "track_id": 78,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            545.0,
+            417.0,
+            647.0,
+            701.0
+          ],
+          "size_class": "large",
+          "track_id": 79,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            461.0,
+            462.0,
+            575.0,
+            767.0
+          ],
+          "size_class": "large",
+          "track_id": 80,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            627.0,
+            393.0,
+            709.0,
+            650.0
+          ],
+          "size_class": "large",
+          "track_id": 81,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            691.0,
+            377.0,
+            756.0,
+            609.0
+          ],
+          "size_class": "large",
+          "track_id": 82,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1268.0,
+            530.0,
+            1430.0,
+            835.0
+          ],
+          "size_class": "large",
+          "track_id": 83,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1440.0,
+            540.0,
+            1500.0,
+            635.0
+          ],
+          "size_class": "medium",
+          "track_id": 84,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1057.0,
+            469.0,
+            1103.0,
+            588.0
+          ],
+          "size_class": "medium",
+          "track_id": 85,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1878.0,
+            740.0,
+            1919.0,
+            1081.0
+          ],
+          "size_class": "large",
+          "track_id": 86,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1426.0,
+            597.0,
+            1587.0,
+            668.0
+          ],
+          "size_class": "medium",
+          "track_id": 87,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1309.0,
+            402.0,
+            1530.0,
+            464.0
+          ],
+          "size_class": "medium",
+          "track_id": 88,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1317.0,
+            438.0,
+            1579.0,
+            520.0
+          ],
+          "size_class": "medium",
+          "track_id": 89,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1.0,
+            1.0,
+            444.0,
+            853.0
+          ],
+          "size_class": "large",
+          "track_id": 90,
+          "annotator": "MOT20-01_official"
+        }
+      ]
+    },
+    "mot20_f0060": {
+      "id": "mot20_f0060",
+      "file": "frames/mot20_f0060.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "MOT20-01 official (CC BY-NC-SA 4.0)",
+      "frame_index": 60,
+      "boxes": [
+        {
+          "bbox": [
+            353.0,
+            799.0,
+            480.0,
+            1072.0
+          ],
+          "size_class": "large",
+          "track_id": 1,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            468.0,
+            798.0,
+            582.0,
+            1081.0
+          ],
+          "size_class": "large",
+          "track_id": 2,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            527.0,
+            778.0,
+            625.0,
+            1016.0
+          ],
+          "size_class": "large",
+          "track_id": 3,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            655.0,
+            785.0,
+            761.0,
+            1033.0
+          ],
+          "size_class": "large",
+          "track_id": 5,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            735.0,
+            802.0,
+            839.0,
+            1028.0
+          ],
+          "size_class": "large",
+          "track_id": 6,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1389.0,
+            680.0,
+            1485.0,
+            897.0
+          ],
+          "size_class": "large",
+          "track_id": 7,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1414.0,
+            676.0,
+            1496.0,
+            888.0
+          ],
+          "size_class": "large",
+          "track_id": 8,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1245.0,
+            642.0,
+            1302.0,
+            824.0
+          ],
+          "size_class": "large",
+          "track_id": 9,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1522.0,
+            561.0,
+            1575.0,
+            661.0
+          ],
+          "size_class": "medium",
+          "track_id": 10,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1361.0,
+            518.0,
+            1413.0,
+            601.0
+          ],
+          "size_class": "medium",
+          "track_id": 11,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1290.0,
+            668.0,
+            1370.0,
+            864.0
+          ],
+          "size_class": "large",
+          "track_id": 12,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1552.0,
+            672.0,
+            1631.0,
+            873.0
+          ],
+          "size_class": "large",
+          "track_id": 13,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1336.0,
+            699.0,
+            1429.0,
+            910.0
+          ],
+          "size_class": "large",
+          "track_id": 14,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1200.0,
+            697.0,
+            1281.0,
+            906.0
+          ],
+          "size_class": "large",
+          "track_id": 15,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1506.0,
+            656.0,
+            1583.0,
+            836.0
+          ],
+          "size_class": "large",
+          "track_id": 16,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            826.0,
+            535.0,
+            872.0,
+            646.0
+          ],
+          "size_class": "medium",
+          "track_id": 17,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            874.0,
+            512.0,
+            928.0,
+            635.0
+          ],
+          "size_class": "medium",
+          "track_id": 18,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            804.0,
+            555.0,
+            854.0,
+            689.0
+          ],
+          "size_class": "medium",
+          "track_id": 19,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            870.0,
+            541.0,
+            932.0,
+            674.0
+          ],
+          "size_class": "medium",
+          "track_id": 20,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            914.0,
+            519.0,
+            963.0,
+            641.0
+          ],
+          "size_class": "medium",
+          "track_id": 21,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            989.0,
+            520.0,
+            1045.0,
+            653.0
+          ],
+          "size_class": "medium",
+          "track_id": 22,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            929.0,
+            534.0,
+            986.0,
+            674.0
+          ],
+          "size_class": "medium",
+          "track_id": 23,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            848.0,
+            606.0,
+            937.0,
+            792.0
+          ],
+          "size_class": "large",
+          "track_id": 24,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1216.0,
+            617.0,
+            1269.0,
+            772.0
+          ],
+          "size_class": "medium",
+          "track_id": 25,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            905.0,
+            609.0,
+            966.0,
+            787.0
+          ],
+          "size_class": "large",
+          "track_id": 26,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            970.0,
+            614.0,
+            1034.0,
+            775.0
+          ],
+          "size_class": "large",
+          "track_id": 27,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1021.0,
+            598.0,
+            1081.0,
+            749.0
+          ],
+          "size_class": "medium",
+          "track_id": 28,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1081.0,
+            595.0,
+            1150.0,
+            740.0
+          ],
+          "size_class": "medium",
+          "track_id": 29,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1065.0,
+            588.0,
+            1117.0,
+            725.0
+          ],
+          "size_class": "medium",
+          "track_id": 30,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            969.0,
+            642.0,
+            1049.0,
+            818.0
+          ],
+          "size_class": "large",
+          "track_id": 31,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1040.0,
+            676.0,
+            1092.0,
+            816.0
+          ],
+          "size_class": "medium",
+          "track_id": 32,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1082.0,
+            653.0,
+            1154.0,
+            862.0
+          ],
+          "size_class": "large",
+          "track_id": 33,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1133.0,
+            696.0,
+            1211.0,
+            911.0
+          ],
+          "size_class": "large",
+          "track_id": 34,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1121.0,
+            590.0,
+            1179.0,
+            742.0
+          ],
+          "size_class": "medium",
+          "track_id": 35,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1223.0,
+            620.0,
+            1289.0,
+            802.0
+          ],
+          "size_class": "large",
+          "track_id": 36,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1171.0,
+            682.0,
+            1242.0,
+            857.0
+          ],
+          "size_class": "large",
+          "track_id": 37,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1501.0,
+            825.0,
+            1583.0,
+            1045.0
+          ],
+          "size_class": "large",
+          "track_id": 41,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1761.0,
+            798.0,
+            1891.0,
+            1020.0
+          ],
+          "size_class": "large",
+          "track_id": 42,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            743.0,
+            492.0,
+            791.0,
+            607.0
+          ],
+          "size_class": "medium",
+          "track_id": 55,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1338.0,
+            540.0,
+            1384.0,
+            611.0
+          ],
+          "size_class": "medium",
+          "track_id": 75,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1292.0,
+            481.0,
+            1342.0,
+            579.0
+          ],
+          "size_class": "medium",
+          "track_id": 77,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1343.0,
+            478.0,
+            1400.0,
+            575.0
+          ],
+          "size_class": "medium",
+          "track_id": 78,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            556.0,
+            435.0,
+            657.0,
+            719.0
+          ],
+          "size_class": "large",
+          "track_id": 79,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            471.0,
+            484.0,
+            584.0,
+            789.0
+          ],
+          "size_class": "large",
+          "track_id": 80,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            639.0,
+            408.0,
+            720.0,
+            665.0
+          ],
+          "size_class": "large",
+          "track_id": 81,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            700.0,
+            400.0,
+            766.0,
+            632.0
+          ],
+          "size_class": "large",
+          "track_id": 82,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1283.0,
+            549.0,
+            1444.0,
+            854.0
+          ],
+          "size_class": "large",
+          "track_id": 83,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1447.0,
+            558.0,
+            1507.0,
+            653.0
+          ],
+          "size_class": "medium",
+          "track_id": 84,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1059.0,
+            488.0,
+            1104.0,
+            607.0
+          ],
+          "size_class": "medium",
+          "track_id": 85,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1892.0,
+            756.0,
+            1919.0,
+            1081.0
+          ],
+          "size_class": "large",
+          "track_id": 86,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1430.0,
+            616.0,
+            1590.0,
+            686.0
+          ],
+          "size_class": "medium",
+          "track_id": 87,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1316.0,
+            415.0,
+            1536.0,
+            477.0
+          ],
+          "size_class": "medium",
+          "track_id": 88,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1334.0,
+            459.0,
+            1595.0,
+            541.0
+          ],
+          "size_class": "medium",
+          "track_id": 89,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1.0,
+            1.0,
+            455.0,
+            850.0
+          ],
+          "size_class": "large",
+          "track_id": 90,
+          "annotator": "MOT20-01_official"
+        }
+      ]
+    },
+    "mot20_f0090": {
+      "id": "mot20_f0090",
+      "file": "frames/mot20_f0090.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "MOT20-01 official (CC BY-NC-SA 4.0)",
+      "frame_index": 90,
+      "boxes": [
+        {
+          "bbox": [
+            393.0,
+            744.0,
+            514.0,
+            1003.0
+          ],
+          "size_class": "large",
+          "track_id": 1,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            511.0,
+            751.0,
+            617.0,
+            1017.0
+          ],
+          "size_class": "large",
+          "track_id": 2,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            605.0,
+            732.0,
+            690.0,
+            958.0
+          ],
+          "size_class": "large",
+          "track_id": 3,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            608.0,
+            798.0,
+            714.0,
+            1055.0
+          ],
+          "size_class": "large",
+          "track_id": 5,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            718.0,
+            809.0,
+            830.0,
+            1050.0
+          ],
+          "size_class": "large",
+          "track_id": 6,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1295.0,
+            644.0,
+            1383.0,
+            853.0
+          ],
+          "size_class": "large",
+          "track_id": 7,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1304.0,
+            642.0,
+            1374.0,
+            850.0
+          ],
+          "size_class": "large",
+          "track_id": 8,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1246.0,
+            614.0,
+            1304.0,
+            796.0
+          ],
+          "size_class": "large",
+          "track_id": 9,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1522.0,
+            545.0,
+            1575.0,
+            645.0
+          ],
+          "size_class": "medium",
+          "track_id": 10,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1361.0,
+            501.0,
+            1411.0,
+            583.0
+          ],
+          "size_class": "medium",
+          "track_id": 11,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1225.0,
+            633.0,
+            1289.0,
+            829.0
+          ],
+          "size_class": "large",
+          "track_id": 12,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1568.0,
+            666.0,
+            1644.0,
+            866.0
+          ],
+          "size_class": "large",
+          "track_id": 13,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1410.0,
+            697.0,
+            1494.0,
+            915.0
+          ],
+          "size_class": "large",
+          "track_id": 14,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1278.0,
+            700.0,
+            1379.0,
+            916.0
+          ],
+          "size_class": "large",
+          "track_id": 15,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1551.0,
+            647.0,
+            1628.0,
+            845.0
+          ],
+          "size_class": "large",
+          "track_id": 16,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            833.0,
+            525.0,
+            879.0,
+            640.0
+          ],
+          "size_class": "medium",
+          "track_id": 17,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            884.0,
+            501.0,
+            942.0,
+            638.0
+          ],
+          "size_class": "medium",
+          "track_id": 18,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            807.0,
+            543.0,
+            859.0,
+            680.0
+          ],
+          "size_class": "medium",
+          "track_id": 19,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            908.0,
+            529.0,
+            965.0,
+            663.0
+          ],
+          "size_class": "medium",
+          "track_id": 20,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            933.0,
+            510.0,
+            983.0,
+            637.0
+          ],
+          "size_class": "medium",
+          "track_id": 21,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1010.0,
+            508.0,
+            1070.0,
+            644.0
+          ],
+          "size_class": "medium",
+          "track_id": 22,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            962.0,
+            531.0,
+            1020.0,
+            671.0
+          ],
+          "size_class": "medium",
+          "track_id": 23,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            863.0,
+            598.0,
+            967.0,
+            795.0
+          ],
+          "size_class": "large",
+          "track_id": 24,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1210.0,
+            598.0,
+            1266.0,
+            753.0
+          ],
+          "size_class": "medium",
+          "track_id": 25,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            930.0,
+            600.0,
+            1004.0,
+            786.0
+          ],
+          "size_class": "large",
+          "track_id": 26,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1000.0,
+            606.0,
+            1065.0,
+            770.0
+          ],
+          "size_class": "large",
+          "track_id": 27,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1056.0,
+            590.0,
+            1118.0,
+            753.0
+          ],
+          "size_class": "large",
+          "track_id": 28,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1106.0,
+            582.0,
+            1166.0,
+            752.0
+          ],
+          "size_class": "large",
+          "track_id": 29,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1093.0,
+            582.0,
+            1149.0,
+            719.0
+          ],
+          "size_class": "medium",
+          "track_id": 30,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            996.0,
+            642.0,
+            1081.0,
+            824.0
+          ],
+          "size_class": "large",
+          "track_id": 31,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1066.0,
+            685.0,
+            1128.0,
+            824.0
+          ],
+          "size_class": "medium",
+          "track_id": 32,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1165.0,
+            654.0,
+            1243.0,
+            862.0
+          ],
+          "size_class": "large",
+          "track_id": 33,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1192.0,
+            696.0,
+            1284.0,
+            919.0
+          ],
+          "size_class": "large",
+          "track_id": 34,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1203.0,
+            579.0,
+            1259.0,
+            734.0
+          ],
+          "size_class": "medium",
+          "track_id": 35,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1326.0,
+            620.0,
+            1395.0,
+            801.0
+          ],
+          "size_class": "large",
+          "track_id": 36,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1253.0,
+            676.0,
+            1324.0,
+            862.0
+          ],
+          "size_class": "large",
+          "track_id": 37,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1.0,
+            985.0,
+            42.0,
+            1080.0
+          ],
+          "size_class": "medium",
+          "track_id": 38,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            51.0,
+            1038.0,
+            117.0,
+            1081.0
+          ],
+          "size_class": "small",
+          "track_id": 39,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1248.0,
+            804.0,
+            1365.0,
+            1024.0
+          ],
+          "size_class": "large",
+          "track_id": 41,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1554.0,
+            776.0,
+            1675.0,
+            1006.0
+          ],
+          "size_class": "large",
+          "track_id": 42,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            809.0,
+            478.0,
+            859.0,
+            591.0
+          ],
+          "size_class": "medium",
+          "track_id": 55,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            741.0,
+            457.0,
+            791.0,
+            591.0
+          ],
+          "size_class": "medium",
+          "track_id": 56,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1337.0,
+            522.0,
+            1383.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 75,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1333.0,
+            463.0,
+            1383.0,
+            561.0
+          ],
+          "size_class": "medium",
+          "track_id": 77,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1375.0,
+            463.0,
+            1432.0,
+            560.0
+          ],
+          "size_class": "medium",
+          "track_id": 78,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            549.0,
+            415.0,
+            651.0,
+            699.0
+          ],
+          "size_class": "large",
+          "track_id": 79,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            464.0,
+            473.0,
+            578.0,
+            778.0
+          ],
+          "size_class": "large",
+          "track_id": 80,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            636.0,
+            393.0,
+            717.0,
+            650.0
+          ],
+          "size_class": "large",
+          "track_id": 81,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            696.0,
+            377.0,
+            762.0,
+            609.0
+          ],
+          "size_class": "large",
+          "track_id": 82,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1279.0,
+            526.0,
+            1440.0,
+            831.0
+          ],
+          "size_class": "large",
+          "track_id": 83,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1443.0,
+            539.0,
+            1503.0,
+            634.0
+          ],
+          "size_class": "medium",
+          "track_id": 84,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1052.0,
+            467.0,
+            1098.0,
+            586.0
+          ],
+          "size_class": "medium",
+          "track_id": 85,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1888.0,
+            740.0,
+            1918.0,
+            1081.0
+          ],
+          "size_class": "large",
+          "track_id": 86,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1430.0,
+            598.0,
+            1592.0,
+            668.0
+          ],
+          "size_class": "medium",
+          "track_id": 87,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1312.0,
+            405.0,
+            1532.0,
+            467.0
+          ],
+          "size_class": "medium",
+          "track_id": 88,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            1329.0,
+            438.0,
+            1591.0,
+            520.0
+          ],
+          "size_class": "medium",
+          "track_id": 89,
+          "annotator": "MOT20-01_official"
+        },
+        {
+          "bbox": [
+            3.0,
+            1.0,
+            451.0,
+            846.0
+          ],
+          "size_class": "large",
+          "track_id": 90,
+          "annotator": "MOT20-01_official"
+        }
+      ]
+    },
+    "mot17_f0030": {
+      "id": "mot17_f0030",
+      "file": "frames/mot17_f0030.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "MOT17-02 official (CC BY-NC-SA 4.0)",
+      "frame_index": 30,
+      "boxes": [
+        {
+          "bbox": [
+            912.0,
+            484.0,
+            1009.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 1,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1576.0,
+            398.0,
+            1751.0,
+            829.0
+          ],
+          "size_class": "large",
+          "track_id": 2,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            597.0,
+            445.0,
+            687.0,
+            714.0
+          ],
+          "size_class": "large",
+          "track_id": 3,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1585.0,
+            -1.0,
+            1921.0,
+            577.0
+          ],
+          "size_class": "large",
+          "track_id": 4,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1163.0,
+            441.0,
+            1196.0,
+            530.0
+          ],
+          "size_class": "medium",
+          "track_id": 5,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1308.0,
+            431.0,
+            1342.0,
+            549.0
+          ],
+          "size_class": "medium",
+          "track_id": 6,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            907.0,
+            414.0,
+            937.0,
+            553.0
+          ],
+          "size_class": "medium",
+          "track_id": 7,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1667.0,
+            417.0,
+            1877.0,
+            802.0
+          ],
+          "size_class": "large",
+          "track_id": 8,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1055.0,
+            483.0,
+            1091.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 9,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1090.0,
+            484.0,
+            1122.0,
+            598.0
+          ],
+          "size_class": "medium",
+          "track_id": 10,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            720.0,
+            492.0,
+            766.0,
+            571.0
+          ],
+          "size_class": "medium",
+          "track_id": 11,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            679.0,
+            492.0,
+            731.0,
+            597.0
+          ],
+          "size_class": "medium",
+          "track_id": 12,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            731.0,
+            460.0,
+            758.0,
+            535.0
+          ],
+          "size_class": "medium",
+          "track_id": 13,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1258.0,
+            447.0,
+            1291.0,
+            547.0
+          ],
+          "size_class": "medium",
+          "track_id": 14,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1013.0,
+            441.0,
+            1053.0,
+            557.0
+          ],
+          "size_class": "medium",
+          "track_id": 15,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1099.0,
+            440.0,
+            1137.0,
+            548.0
+          ],
+          "size_class": "medium",
+          "track_id": 17,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            930.0,
+            435.0,
+            972.0,
+            549.0
+          ],
+          "size_class": "medium",
+          "track_id": 18,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            470.0,
+            444.0,
+            585.0,
+            733.0
+          ],
+          "size_class": "large",
+          "track_id": 19,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            653.0,
+            461.0,
+            721.0,
+            656.0
+          ],
+          "size_class": "large",
+          "track_id": 20,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1435.0,
+            429.0,
+            1499.0,
+            560.0
+          ],
+          "size_class": "medium",
+          "track_id": 21,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1552.0,
+            436.0,
+            1602.0,
+            559.0
+          ],
+          "size_class": "medium",
+          "track_id": 22,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            498.0,
+            460.0,
+            587.0,
+            709.0
+          ],
+          "size_class": "large",
+          "track_id": 23,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            835.0,
+            473.0,
+            887.0,
+            548.0
+          ],
+          "size_class": "medium",
+          "track_id": 24,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            796.0,
+            476.0,
+            851.0,
+            536.0
+          ],
+          "size_class": "medium",
+          "track_id": 25,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            547.0,
+            463.0,
+            582.0,
+            556.0
+          ],
+          "size_class": "medium",
+          "track_id": 26,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            375.0,
+            446.0,
+            416.0,
+            550.0
+          ],
+          "size_class": "medium",
+          "track_id": 30,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            419.0,
+            459.0,
+            458.0,
+            543.0
+          ],
+          "size_class": "medium",
+          "track_id": 31,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            581.0,
+            455.0,
+            616.0,
+            591.0
+          ],
+          "size_class": "medium",
+          "track_id": 36,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1002.0,
+            454.0,
+            1034.0,
+            531.0
+          ],
+          "size_class": "medium",
+          "track_id": 39,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            639.0,
+            455.0,
+            678.0,
+            587.0
+          ],
+          "size_class": "medium",
+          "track_id": 40,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            698.0,
+            462.0,
+            726.0,
+            529.0
+          ],
+          "size_class": "medium",
+          "track_id": 46,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            712.0,
+            477.0,
+            731.0,
+            534.0
+          ],
+          "size_class": "small",
+          "track_id": 47,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            733.0,
+            503.0,
+            763.0,
+            554.0
+          ],
+          "size_class": "small",
+          "track_id": 50,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            910.0,
+            408.0,
+            936.0,
+            537.0
+          ],
+          "size_class": "medium",
+          "track_id": 51,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            712.0,
+            515.0,
+            751.0,
+            581.0
+          ],
+          "size_class": "medium",
+          "track_id": 52,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            679.0,
+            528.0,
+            725.0,
+            607.0
+          ],
+          "size_class": "medium",
+          "track_id": 53,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            985.0,
+            459.0,
+            1004.0,
+            512.0
+          ],
+          "size_class": "small",
+          "track_id": 65,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1003.0,
+            453.0,
+            1021.0,
+            514.0
+          ],
+          "size_class": "medium",
+          "track_id": 66,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            578.0,
+            427.0,
+            598.0,
+            470.0
+          ],
+          "size_class": "small",
+          "track_id": 68,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            595.0,
+            425.0,
+            613.0,
+            467.0
+          ],
+          "size_class": "small",
+          "track_id": 69,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1026.0,
+            448.0,
+            1050.0,
+            517.0
+          ],
+          "size_class": "medium",
+          "track_id": 70,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            696.0,
+            449.0,
+            730.0,
+            538.0
+          ],
+          "size_class": "medium",
+          "track_id": 72,
+          "annotator": "MOT17-02_official"
+        }
+      ]
+    },
+    "mot17_f0060": {
+      "id": "mot17_f0060",
+      "file": "frames/mot17_f0060.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "MOT17-02 official (CC BY-NC-SA 4.0)",
+      "frame_index": 60,
+      "boxes": [
+        {
+          "bbox": [
+            912.0,
+            484.0,
+            1009.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 1,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            622.0,
+            445.0,
+            712.0,
+            725.0
+          ],
+          "size_class": "large",
+          "track_id": 3,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1585.0,
+            -1.0,
+            1921.0,
+            577.0
+          ],
+          "size_class": "large",
+          "track_id": 4,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1163.0,
+            441.0,
+            1196.0,
+            530.0
+          ],
+          "size_class": "medium",
+          "track_id": 5,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1308.0,
+            431.0,
+            1342.0,
+            549.0
+          ],
+          "size_class": "medium",
+          "track_id": 6,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            907.0,
+            414.0,
+            937.0,
+            553.0
+          ],
+          "size_class": "medium",
+          "track_id": 7,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1054.0,
+            483.0,
+            1091.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 9,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1089.0,
+            484.0,
+            1122.0,
+            598.0
+          ],
+          "size_class": "medium",
+          "track_id": 10,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            708.0,
+            486.0,
+            752.0,
+            577.0
+          ],
+          "size_class": "medium",
+          "track_id": 11,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            679.0,
+            492.0,
+            730.0,
+            597.0
+          ],
+          "size_class": "medium",
+          "track_id": 12,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            750.0,
+            465.0,
+            790.0,
+            554.0
+          ],
+          "size_class": "medium",
+          "track_id": 13,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1261.0,
+            447.0,
+            1294.0,
+            547.0
+          ],
+          "size_class": "medium",
+          "track_id": 14,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1005.0,
+            441.0,
+            1045.0,
+            557.0
+          ],
+          "size_class": "medium",
+          "track_id": 15,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1097.0,
+            439.0,
+            1135.0,
+            547.0
+          ],
+          "size_class": "medium",
+          "track_id": 17,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            928.0,
+            435.0,
+            971.0,
+            549.0
+          ],
+          "size_class": "medium",
+          "track_id": 18,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            481.0,
+            438.0,
+            609.0,
+            759.0
+          ],
+          "size_class": "large",
+          "track_id": 19,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            687.0,
+            458.0,
+            761.0,
+            671.0
+          ],
+          "size_class": "large",
+          "track_id": 20,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1518.0,
+            430.0,
+            1569.0,
+            557.0
+          ],
+          "size_class": "medium",
+          "track_id": 21,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            500.0,
+            452.0,
+            588.0,
+            729.0
+          ],
+          "size_class": "large",
+          "track_id": 23,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            835.0,
+            473.0,
+            887.0,
+            548.0
+          ],
+          "size_class": "medium",
+          "track_id": 24,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            796.0,
+            476.0,
+            851.0,
+            536.0
+          ],
+          "size_class": "medium",
+          "track_id": 25,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            539.0,
+            463.0,
+            574.0,
+            556.0
+          ],
+          "size_class": "medium",
+          "track_id": 26,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            496.0,
+            456.0,
+            524.0,
+            559.0
+          ],
+          "size_class": "medium",
+          "track_id": 27,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            374.0,
+            446.0,
+            415.0,
+            550.0
+          ],
+          "size_class": "medium",
+          "track_id": 30,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            420.0,
+            459.0,
+            458.0,
+            543.0
+          ],
+          "size_class": "medium",
+          "track_id": 31,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            584.0,
+            455.0,
+            623.0,
+            589.0
+          ],
+          "size_class": "medium",
+          "track_id": 36,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            670.0,
+            448.0,
+            737.0,
+            636.0
+          ],
+          "size_class": "large",
+          "track_id": 37,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1031.0,
+            454.0,
+            1063.0,
+            531.0
+          ],
+          "size_class": "medium",
+          "track_id": 39,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            653.0,
+            456.0,
+            690.0,
+            582.0
+          ],
+          "size_class": "medium",
+          "track_id": 40,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            697.0,
+            462.0,
+            724.0,
+            529.0
+          ],
+          "size_class": "medium",
+          "track_id": 46,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            712.0,
+            477.0,
+            731.0,
+            534.0
+          ],
+          "size_class": "small",
+          "track_id": 47,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            752.0,
+            501.0,
+            790.0,
+            562.0
+          ],
+          "size_class": "medium",
+          "track_id": 50,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            910.0,
+            408.0,
+            936.0,
+            537.0
+          ],
+          "size_class": "medium",
+          "track_id": 51,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            704.0,
+            518.0,
+            743.0,
+            584.0
+          ],
+          "size_class": "medium",
+          "track_id": 52,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            679.0,
+            528.0,
+            725.0,
+            607.0
+          ],
+          "size_class": "medium",
+          "track_id": 53,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            609.0,
+            461.0,
+            635.0,
+            536.0
+          ],
+          "size_class": "medium",
+          "track_id": 57,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            572.0,
+            454.0,
+            595.0,
+            526.0
+          ],
+          "size_class": "medium",
+          "track_id": 59,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            616.0,
+            456.0,
+            639.0,
+            533.0
+          ],
+          "size_class": "medium",
+          "track_id": 61,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            985.0,
+            459.0,
+            1004.0,
+            512.0
+          ],
+          "size_class": "small",
+          "track_id": 65,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1003.0,
+            453.0,
+            1021.0,
+            514.0
+          ],
+          "size_class": "medium",
+          "track_id": 66,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            579.0,
+            424.0,
+            599.0,
+            467.0
+          ],
+          "size_class": "small",
+          "track_id": 68,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            595.0,
+            423.0,
+            613.0,
+            465.0
+          ],
+          "size_class": "small",
+          "track_id": 69,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1026.0,
+            451.0,
+            1050.0,
+            520.0
+          ],
+          "size_class": "medium",
+          "track_id": 70,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            731.0,
+            447.0,
+            764.0,
+            543.0
+          ],
+          "size_class": "medium",
+          "track_id": 72,
+          "annotator": "MOT17-02_official"
+        }
+      ]
+    },
+    "mot17_f0090": {
+      "id": "mot17_f0090",
+      "file": "frames/mot17_f0090.jpg",
+      "width": 1920,
+      "height": 1080,
+      "gt_source": "MOT17-02 official (CC BY-NC-SA 4.0)",
+      "frame_index": 90,
+      "boxes": [
+        {
+          "bbox": [
+            912.0,
+            484.0,
+            1009.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 1,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            630.0,
+            440.0,
+            729.0,
+            737.0
+          ],
+          "size_class": "large",
+          "track_id": 3,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1585.0,
+            -1.0,
+            1921.0,
+            577.0
+          ],
+          "size_class": "large",
+          "track_id": 4,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1163.0,
+            441.0,
+            1196.0,
+            530.0
+          ],
+          "size_class": "medium",
+          "track_id": 5,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1308.0,
+            431.0,
+            1342.0,
+            549.0
+          ],
+          "size_class": "medium",
+          "track_id": 6,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            907.0,
+            414.0,
+            937.0,
+            553.0
+          ],
+          "size_class": "medium",
+          "track_id": 7,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1053.0,
+            483.0,
+            1091.0,
+            593.0
+          ],
+          "size_class": "medium",
+          "track_id": 9,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1089.0,
+            484.0,
+            1123.0,
+            598.0
+          ],
+          "size_class": "medium",
+          "track_id": 10,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            707.0,
+            486.0,
+            751.0,
+            577.0
+          ],
+          "size_class": "medium",
+          "track_id": 11,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            679.0,
+            492.0,
+            730.0,
+            597.0
+          ],
+          "size_class": "medium",
+          "track_id": 12,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            760.0,
+            472.0,
+            802.0,
+            563.0
+          ],
+          "size_class": "medium",
+          "track_id": 13,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1261.0,
+            447.0,
+            1294.0,
+            547.0
+          ],
+          "size_class": "medium",
+          "track_id": 14,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1004.0,
+            442.0,
+            1043.0,
+            551.0
+          ],
+          "size_class": "medium",
+          "track_id": 15,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1095.0,
+            439.0,
+            1133.0,
+            547.0
+          ],
+          "size_class": "medium",
+          "track_id": 17,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            928.0,
+            435.0,
+            971.0,
+            549.0
+          ],
+          "size_class": "medium",
+          "track_id": 18,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            548.0,
+            443.0,
+            659.0,
+            786.0
+          ],
+          "size_class": "large",
+          "track_id": 19,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            728.0,
+            454.0,
+            813.0,
+            680.0
+          ],
+          "size_class": "large",
+          "track_id": 20,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            521.0,
+            449.0,
+            615.0,
+            745.0
+          ],
+          "size_class": "large",
+          "track_id": 23,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            835.0,
+            473.0,
+            887.0,
+            548.0
+          ],
+          "size_class": "medium",
+          "track_id": 24,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            796.0,
+            476.0,
+            851.0,
+            536.0
+          ],
+          "size_class": "medium",
+          "track_id": 25,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            516.0,
+            466.0,
+            551.0,
+            559.0
+          ],
+          "size_class": "medium",
+          "track_id": 26,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            497.0,
+            456.0,
+            526.0,
+            560.0
+          ],
+          "size_class": "medium",
+          "track_id": 27,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            461.0,
+            466.0,
+            501.0,
+            567.0
+          ],
+          "size_class": "medium",
+          "track_id": 29,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            373.0,
+            446.0,
+            415.0,
+            550.0
+          ],
+          "size_class": "medium",
+          "track_id": 30,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            427.0,
+            457.0,
+            462.0,
+            540.0
+          ],
+          "size_class": "medium",
+          "track_id": 31,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            587.0,
+            455.0,
+            629.0,
+            590.0
+          ],
+          "size_class": "medium",
+          "track_id": 36,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            724.0,
+            447.0,
+            790.0,
+            650.0
+          ],
+          "size_class": "large",
+          "track_id": 37,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1061.0,
+            454.0,
+            1093.0,
+            531.0
+          ],
+          "size_class": "medium",
+          "track_id": 39,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            691.0,
+            455.0,
+            729.0,
+            581.0
+          ],
+          "size_class": "medium",
+          "track_id": 40,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            696.0,
+            462.0,
+            723.0,
+            529.0
+          ],
+          "size_class": "medium",
+          "track_id": 46,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            712.0,
+            477.0,
+            731.0,
+            534.0
+          ],
+          "size_class": "small",
+          "track_id": 47,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            765.0,
+            503.0,
+            804.0,
+            574.0
+          ],
+          "size_class": "medium",
+          "track_id": 50,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            909.0,
+            408.0,
+            935.0,
+            537.0
+          ],
+          "size_class": "medium",
+          "track_id": 51,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            702.0,
+            518.0,
+            742.0,
+            585.0
+          ],
+          "size_class": "medium",
+          "track_id": 52,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            679.0,
+            528.0,
+            725.0,
+            607.0
+          ],
+          "size_class": "medium",
+          "track_id": 53,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            606.0,
+            461.0,
+            631.0,
+            533.0
+          ],
+          "size_class": "medium",
+          "track_id": 57,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            567.0,
+            454.0,
+            591.0,
+            529.0
+          ],
+          "size_class": "medium",
+          "track_id": 59,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            610.0,
+            456.0,
+            633.0,
+            530.0
+          ],
+          "size_class": "medium",
+          "track_id": 61,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            985.0,
+            459.0,
+            1004.0,
+            512.0
+          ],
+          "size_class": "small",
+          "track_id": 65,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1003.0,
+            453.0,
+            1021.0,
+            514.0
+          ],
+          "size_class": "medium",
+          "track_id": 66,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            581.0,
+            423.0,
+            601.0,
+            466.0
+          ],
+          "size_class": "small",
+          "track_id": 68,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            595.0,
+            423.0,
+            613.0,
+            465.0
+          ],
+          "size_class": "small",
+          "track_id": 69,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            1009.0,
+            451.0,
+            1033.0,
+            520.0
+          ],
+          "size_class": "medium",
+          "track_id": 70,
+          "annotator": "MOT17-02_official"
+        },
+        {
+          "bbox": [
+            761.0,
+            449.0,
+            794.0,
+            545.0
+          ],
+          "size_class": "medium",
+          "track_id": 72,
+          "annotator": "MOT17-02_official"
+        }
+      ]
+    }
+  }
+}

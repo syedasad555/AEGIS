@@ -1,0 +1,11 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+# Dense Crowd & Occlusion ByteTrack Configuration
+# Optimized for crowded pedestrian scenes (e.g. MOT20 / MOT17) with frequent overlaps
+
+tracker_type: bytetrack
+track_high_thresh: 0.35     # High-score detection threshold for stage 1 association
+track_low_thresh: 0.05      # Low-score detection threshold to recover occluded pedestrians
+new_track_thresh: 0.30      # Prevents identity proliferation and duplicate tracks in dense clusters
+track_buffer: 60            # Retains lost tracks for 60 frames (~2.0s) through temporary crossings
+match_thresh: 0.70          # Association IoU distance tolerance to prevent ID switches during crossings
+fuse_score: True            # Fuses detection confidence with Kalman spatial motion
