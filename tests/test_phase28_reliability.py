@@ -22,6 +22,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from scripts.fall_detection import FallDetector
 
 
+@unittest.skip("Fall detection removed from AEGIS — see test_zone_direction_anomalies")
 class TestPhase28FallReliability(unittest.TestCase):
     def setUp(self):
         self.config = {
@@ -143,7 +144,8 @@ class TestPhase28DetectionConfig(unittest.TestCase):
         self.assertEqual(int(cfg.get("inference_imgsz", 0)), 800)
         self.assertFalse(bool(cfg.get("tiled_inference", {}).get("enabled", False)))
         self.assertIn("crowd", str(cfg.get("tracker_config", "")))
-        self.assertTrue(bool(cfg.get("fall_confirm_require_dynamic_drop", False)))
+        # Fall detection removed — confirm knobs should not be required
+        self.assertNotIn("fall_confirm_require_dynamic_drop", cfg)
 
 
 if __name__ == "__main__":

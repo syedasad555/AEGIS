@@ -465,8 +465,197 @@ body {
 .viewport-error .error-detail { font-size: 11px; color: var(--text-muted); max-width: 400px; }
 
 /* ==========================================================================
-   Alert & Incident Feed Console
+   Playback Speed Control Toolbar & Detection Profile Header Controls
    ========================================================================== */
+
+.viewport-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detection-profile-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-input);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.control-tiny-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  font-family: var(--font-mono);
+}
+
+.select-mini {
+  background: transparent;
+  color: var(--cyan-primary);
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  outline: none;
+}
+
+.select-mini option {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.playback-speed-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-surface-header);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  height: 38px;
+}
+
+.speed-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.speed-buttons {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+.speed-btn {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.speed-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.speed-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--cyan-primary);
+  border-color: var(--cyan-primary);
+  font-weight: 700;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.25);
+}
+
+.speed-custom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.custom-speed-input {
+  width: 58px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  padding: 2px 5px;
+  outline: none;
+}
+
+.custom-speed-input:focus {
+  border-color: var(--cyan-primary);
+}
+
+.btn-apply-custom {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.speed-badges-container {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.speed-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.speed-badge.req-badge {
+  color: var(--cyan-primary);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.speed-badge.act-badge {
+  color: var(--emerald-success);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.speed-badge.act-badge.lagging {
+  color: var(--amber-warning);
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.speed-badge.mode-badge {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.12);
+  border: 1px solid rgba(192, 132, 252, 0.35);
+}
+
+.speed-badge.mode-badge.suspect {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.speed-badge.mode-badge.alert {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.speed-badge.mode-badge.empty {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.speed-badge.mode-badge.stopped {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+}
 
 .alert-console {
   height: 150px;
@@ -546,6 +735,47 @@ body {
 
 .btn-clear-selection:hover {
   background: rgba(56, 189, 248, 0.15);
+}
+
+.selection-panel {
+  margin: 0 12px 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 6px;
+}
+.selection-panel-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+  margin-bottom: 8px;
+}
+.selection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+.sel-k {
+  color: #94a3b8;
+  margin-right: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sel-diagnostics {
+  margin-top: 8px;
+  padding: 6px 8px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  max-height: 90px;
+  overflow: auto;
 }
 
 .incident-list {

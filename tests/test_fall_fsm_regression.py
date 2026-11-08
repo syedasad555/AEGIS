@@ -27,6 +27,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from scripts.fall_detection import FallDetector
 
 
+@unittest.skip("Fall detection removed from AEGIS — see test_zone_direction_anomalies")
 class TestFallFSMRegression(unittest.TestCase):
     """Rigorous regression test suite for FallDetector 4-state FSM."""
 

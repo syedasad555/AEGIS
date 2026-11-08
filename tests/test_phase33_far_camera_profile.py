@@ -20,7 +20,9 @@ from _common import resolve_inference_imgsz
 class TestPhase33FarCameraProfile(unittest.TestCase):
     def test_01_production_defaults_preserved(self):
         cfg = yaml.safe_load((PROJECT_ROOT / "configs" / "config.yaml").read_text(encoding="utf-8"))
-        self.assertEqual(cfg.get("yolo_model"), "yolov8n.pt")
+        # Detector is configurable; default is CrowdHuman fine-tune (rollback: yolov8n.pt)
+        self.assertTrue(str(cfg.get("yolo_model", "")).endswith("aegis_yolo11n_crowdhuman.pt")
+                        or cfg.get("yolo_model") == "yolov8n.pt")
         self.assertEqual(int(cfg.get("inference_imgsz", 0)), 800)
         self.assertEqual(cfg.get("tracker_config"), "configs/bytetrack_crowd.yaml")
         self.assertFalse(bool(cfg.get("tiled_inference", {}).get("enabled", False)))

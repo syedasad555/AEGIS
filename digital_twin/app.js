@@ -6,7 +6,8 @@
  *   - Real-Time Live AI Stream (WebSocket) with YOLOv8n + ByteTrack Sensor Feed
  *   - Architectural 2D Digital Twin Virtual Map (Recognizable Corridor Layout)
  *   - Anti-Collision Pedestrian Label & Leader-Line Resolution
- *   - Explainable Evacuation Anomaly Rules (WRONG_DIRECTION, PROLONGED_STOPPING, RESTRICTED_ZONE_ENTRY)
+ *   - Anomaly rules: WRONG_DIRECTION, PROLONGED_STOPPING (corridor flow only)
+ *   - Legend: blue=normal, red=confirmed anomaly, amber=selection
  *   - Interactive Alert Click-to-Inspect Synchronization across CCTV & Digital Twin
  *   - Defensible Severity Classification (CRITICAL / WARNING) & Duration Tracking
  *   - Responsive 100vh Desktop Layout (1366×768 / 1920×1080)
@@ -60,6 +61,13 @@ class DigitalTwinApp {
     this.alertsList = document.getElementById('alertsList');
     this.activeAlertCount = document.getElementById('activeAlertCount');
     this.clearSelectionBtn = document.getElementById('clearSelectionBtn');
+    this.selectionPanel = document.getElementById('selectionPanel');
+    this.selTrackId = document.getElementById('selTrackId');
+    this.selPosition = document.getElementById('selPosition');
+    this.selDirection = document.getElementById('selDirection');
+    this.selZone = document.getElementById('selZone');
+    this.selStatus = document.getElementById('selStatus');
+    this.selAnomaly = document.getElementById('selAnomaly');
 
     // Modal & Toast elements
     this.zonesModal = document.getElementById('zonesModal');
@@ -72,21 +80,14 @@ class DigitalTwinApp {
     this.cfgZonesJson = document.getElementById('cfgZonesJson');
     this.toastContainer = document.getElementById('toastContainer');
 
-    // Architectural Zones Definition (Normalized 0.0 - 1.0)
-    this.zonesConfig = {
-      restricted: [
-        { name: 'RESTRICTED SECURITY ZONE', points: [[0.30, 0.22], [0.68, 0.22], [0.68, 0.54], [0.30, 0.54]] }
-      ],
-      evacuation_route: [
-        { name: 'MAIN EVACUATION CORRIDOR', points: [[0.06, 0.16], [0.94, 0.16], [0.94, 0.84], [0.06, 0.84]] }
-      ],
-      safe_zone: [
-        { name: 'SAFE ASSEMBLY REFUGE', points: [[0.74, 0.06], [0.96, 0.06], [0.96, 0.32], [0.74, 0.32]] }
-      ],
-      exit: [
-        { name: 'EMERGENCY FIRE EXIT', points: [[0.90, 0.42], [0.97, 0.42], [0.97, 0.64], [0.90, 0.64]] }
-      ]
+    // Only main evacuation corridor (normalized fallback for twin)
+    this.corridorConfig = {
+      name: 'MAIN EVACUATION CORRIDOR',
+      points: [[0.06, 0.16], [0.94, 0.16], [0.94, 0.84], [0.06, 0.84]],
+      flow_line: [[0.08, 0.50], [0.92, 0.50]],
+      expected_direction: 'LEFT',
     };
+    this.zonesConfig = { evacuation_route: [this.corridorConfig] };
 
     // Stream and rendering dimensions
     this.videoRefW = 640;
@@ -97,12 +98,34 @@ class DigitalTwinApp {
     this.flowAnimOffset = 0;
     this.currentPedestrians = [];
     this.currentVideoName = null;
+    this.mapZoom = 1.0;
+    this.mapPanX = 0;
+    this.mapPanY = 0;
+    this._labelSlots = [];
+
+    // Colour legend (must match backend visual_state)
+    this.COLOR_NORMAL = '#38bdf8';
+    this.COLOR_ANOMALY = '#ef4444';
+    this.COLOR_SELECTED = '#f59e0b';
+    this.COLOR_CORRIDOR = '#10b981';
 
     // Application state
     this.selectedVideoPath = 'assets/evacuation_test_corridor.avi';
     this.selectedVideoName = 'evacuation_test_corridor.avi';
     this.selectedDirection = 'LEFT';
+    this.selectedSpeed = 1.0;
+    this.selectedProfile = 'balanced';
     this.isAnalysisActive = false;
+    this.diagnosticMode = false;
+
+    // Playback Speed & Profile UI elements
+    this.speedButtons = document.querySelectorAll('.speed-btn[data-speed]');
+    this.customSpeedInput = document.getElementById('customSpeedInput');
+    this.applyCustomSpeedBtn = document.getElementById('applyCustomSpeedBtn');
+    this.requestedSpeedBadge = document.getElementById('requestedSpeedBadge');
+    this.achievedSpeedBadge = document.getElementById('achievedSpeedBadge');
+    this.monitoringModeBadge = document.getElementById('monitoringModeBadge');
+    this.detectionProfileSelect = document.getElementById('detectionProfileSelect');
 
     this.clearTrackHistory();
     this.init();
@@ -151,7 +174,45 @@ class DigitalTwinApp {
       });
     }
 
-    // Zones & Rules Modal Listeners
+    // Playback Speed Controls
+    if (this.speedButtons && this.speedButtons.length > 0) {
+      this.speedButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const spd = parseFloat(btn.getAttribute('data-speed'));
+          if (!isNaN(spd) && spd > 0) {
+            this.setPlaybackSpeed(spd);
+          }
+        });
+      });
+    }
+
+    if (this.applyCustomSpeedBtn && this.customSpeedInput) {
+      const applyCustom = () => {
+        const val = parseFloat(this.customSpeedInput.value);
+        if (!isNaN(val) && val >= 0.1 && val <= 5.0) {
+          this.setPlaybackSpeed(val);
+        } else {
+          this.showToast('Speed must be between 0.1x and 5.0x', 'error');
+        }
+      };
+      this.applyCustomSpeedBtn.addEventListener('click', applyCustom);
+      this.customSpeedInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyCustom();
+        }
+      });
+    }
+
+    // Detection Profile Selector
+    if (this.detectionProfileSelect) {
+      this.detectionProfileSelect.addEventListener('change', (e) => {
+        const prof = e.target.value;
+        this.setDetectionProfile(prof);
+      });
+    }
+
+    // Corridor & Rules Modal Listeners
     if (this.openZonesModalBtn) {
       this.openZonesModalBtn.addEventListener('click', () => this.openZonesModal());
     }
@@ -163,6 +224,16 @@ class DigitalTwinApp {
     }
     if (this.resetZonesBtn) {
       this.resetZonesBtn.addEventListener('click', () => this.resetZonesToDefault());
+    }
+
+    // Virtual Map zoom (wheel) — denser labels when zoomed in
+    if (this.canvas) {
+      this.canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.08 : 0.92;
+        this.mapZoom = Math.max(0.75, Math.min(3.5, this.mapZoom * factor));
+        this.drawDigitalTwinMap(this.currentPedestrians, 1, null, this.selectedDirection);
+      }, { passive: false });
     }
 
     // Close modal on outside click
@@ -188,7 +259,7 @@ class DigitalTwinApp {
 
         this.selectedVideoPath = card.getAttribute('data-video');
         this.selectedVideoName = this.selectedVideoPath.split('/').pop();
-        const preferredDir = card.getAttribute('data-dir') || 'LEFT';
+        const preferredDir = this.coerceAdminDirection(card.getAttribute('data-dir') || 'LEFT');
         this.selectedDirection = preferredDir;
 
         if (this.initialDirectionSelect) {
@@ -283,10 +354,11 @@ class DigitalTwinApp {
       });
     }
 
-    // Evacuation direction dropdown in initial screen
+    // Evacuation direction dropdown in initial screen (cardinals only)
     if (this.initialDirectionSelect) {
       this.initialDirectionSelect.addEventListener('change', (e) => {
-        this.selectedDirection = e.target.value;
+        this.selectedDirection = this.coerceAdminDirection(e.target.value);
+        e.target.value = this.selectedDirection;
         if (this.directionSelect) {
           this.directionSelect.value = this.selectedDirection;
         }
@@ -360,7 +432,9 @@ class DigitalTwinApp {
       this.ws.send(JSON.stringify({
         action: 'start_stream',
         video_path: this.selectedVideoPath,
-        direction: this.selectedDirection
+        direction: this.selectedDirection,
+        speed: this.selectedSpeed,
+        profile: this.selectedProfile
       }));
     } else {
       this.connectWebSocket();
@@ -509,8 +583,29 @@ class DigitalTwinApp {
               this.directionSelect.value = data.expected_direction;
               this.selectedDirection = data.expected_direction;
             }
+            if (data.playback_speed !== undefined) {
+              this.updateSpeedUI(parseFloat(data.playback_speed));
+            }
+            if (data.detection_profile && this.detectionProfileSelect) {
+              this.detectionProfileSelect.value = data.detection_profile;
+              this.selectedProfile = data.detection_profile;
+            }
+          } else if (data.type === 'speed_updated') {
+            if (data.playback_speed !== undefined) {
+              this.updateSpeedUI(parseFloat(data.playback_speed), parseFloat(data.achieved_playback_speed ?? data.playback_speed));
+            }
+          } else if (data.type === 'profile_updated') {
+            if (data.detection_profile && this.detectionProfileSelect) {
+              this.detectionProfileSelect.value = data.detection_profile;
+              this.selectedProfile = data.detection_profile;
+              this.showToast(`Detection Profile: ${data.detection_profile.toUpperCase()}`, 'info');
+            }
           } else if (data.type === 'frame_update') {
-            if (this.statusText) this.statusText.textContent = 'WS STREAM';
+            if (this.statusText) {
+              const ver = data.classifier_version || data.runtime_id || '';
+              this.statusText.textContent = ver ? `WS · ${ver}` : 'WS STREAM';
+              this.statusText.title = data.runtime_id || ver || '';
+            }
             this.renderLiveFrame(data);
           } else if (data.type === 'error') {
             this.showCctvError(data.message);
@@ -548,16 +643,77 @@ class DigitalTwinApp {
     }
   }
 
-  switchDirection(direction) {
-    this.selectedDirection = direction;
-    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAnalysisActive) {
+  coerceAdminDirection(direction) {
+    const d = String(direction || 'LEFT').toUpperCase().replace(/-/g, '_');
+    if (d === 'LEFT' || d === 'RIGHT' || d === 'UP' || d === 'DOWN') return d;
+    if (d === 'WEST') return 'LEFT';
+    if (d === 'EAST') return 'RIGHT';
+    if (d === 'NORTH') return 'UP';
+    if (d === 'SOUTH') return 'DOWN';
+    return 'LEFT';
+  }
+
+  setPlaybackSpeed(speed) {
+    const spd = Math.max(0.1, Math.min(5.0, parseFloat(speed)));
+    if (isNaN(spd)) return;
+    this.selectedSpeed = spd;
+    this.updateSpeedUI(spd, spd);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({
-        action: 'switch_video',
-        video_path: this.selectedVideoPath,
-        direction: direction
+        action: 'set_speed',
+        speed: spd
       }));
     }
-    this.drawDigitalTwinMap(this.currentPedestrians, 1, null, direction);
+  }
+
+  updateSpeedUI(requestedSpeed, achievedSpeed) {
+    if (requestedSpeed !== undefined && requestedSpeed !== null) {
+      this.selectedSpeed = requestedSpeed;
+      if (this.requestedSpeedBadge) {
+        this.requestedSpeedBadge.textContent = `Req: ${requestedSpeed}x`;
+      }
+      if (this.speedButtons) {
+        this.speedButtons.forEach((btn) => {
+          const bSpeed = parseFloat(btn.getAttribute('data-speed'));
+          btn.classList.toggle('active', Math.abs(bSpeed - requestedSpeed) < 0.01);
+        });
+      }
+      if (this.customSpeedInput) {
+        const isPreset = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 5.0].some((s) => Math.abs(s - requestedSpeed) < 0.01);
+        if (!isPreset) {
+          this.customSpeedInput.value = requestedSpeed;
+        }
+      }
+    }
+    if (achievedSpeed !== undefined && achievedSpeed !== null && this.achievedSpeedBadge) {
+      this.achievedSpeedBadge.textContent = `Act: ${Number(achievedSpeed).toFixed(2)}x`;
+      const isLagging = (this.selectedSpeed - achievedSpeed) > 0.25;
+      this.achievedSpeedBadge.classList.toggle('lagging', isLagging);
+    }
+  }
+
+  setDetectionProfile(profile) {
+    const prof = String(profile).toLowerCase();
+    this.selectedProfile = prof;
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        action: 'set_detection_profile',
+        profile: prof
+      }));
+    }
+  }
+
+  switchDirection(direction) {
+    const dir = this.coerceAdminDirection(direction);
+    this.selectedDirection = dir;
+    // Live update — do NOT restart the stream / tracker
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAnalysisActive) {
+      this.ws.send(JSON.stringify({
+        action: 'set_direction',
+        direction: dir
+      }));
+    }
+    this.drawDigitalTwinMap(this.currentPedestrians, 1, null, dir);
   }
 
   togglePause() {
@@ -605,8 +761,74 @@ class DigitalTwinApp {
       });
     }
 
+    this.updateSelectionPanel();
+
     // Redraw Digital Twin canvas immediately
     this.drawDigitalTwinMap(this.currentPedestrians, 1, null, this.selectedDirection);
+  }
+
+  updateSelectionPanel() {
+    if (!this.selectionPanel) return;
+    if (this.selectedTrackId === null) {
+      this.selectionPanel.style.display = 'none';
+      return;
+    }
+    const ped = (this.currentPedestrians || []).find((p) => p.track_id === this.selectedTrackId);
+    this.selectionPanel.style.display = 'block';
+    if (!ped) {
+      if (this.selTrackId) this.selTrackId.textContent = `#${this.selectedTrackId}`;
+      if (this.selStatus) this.selStatus.textContent = 'not in frame';
+      return;
+    }
+    const foot = ped.foot || [0, 0];
+    if (this.selTrackId) this.selTrackId.textContent = `#${ped.track_id}`;
+    if (this.selPosition) this.selPosition.textContent = `${Math.round(foot[0])}, ${Math.round(foot[1])}`;
+    if (this.selDirection) this.selDirection.textContent = ped.direction || 'UNKNOWN';
+    if (this.selZone) {
+      this.selZone.textContent = ped.in_corridor
+        ? (ped.zone_name || 'Corridor')
+        : (ped.zone_name || 'Outside corridor');
+    }
+    if (this.selStatus) {
+      this.selStatus.textContent = ped.movement_status || (ped.anomaly ? 'ALERT' : 'OK');
+    }
+    if (this.selAnomaly) {
+      this.selAnomaly.textContent = ped.anomaly
+        ? this.formatAnomalyLabel(ped.anomaly_type)
+        : (ped.direction_classification === 'UNKNOWN' ? 'Unknown dir' : 'None');
+    }
+    // Direction diagnostic block (selected pedestrian only)
+    let diagEl = document.getElementById('selDiagnostics');
+    if (!diagEl && this.selectionPanel) {
+      diagEl = document.createElement('pre');
+      diagEl.id = 'selDiagnostics';
+      diagEl.className = 'sel-diagnostics';
+      this.selectionPanel.appendChild(diagEl);
+    }
+    if (diagEl) {
+      const d = ped.direction_diagnostics || {
+        estimated_direction: ped.direction,
+        expected_direction: ped.expected_direction,
+        sector_distance: ped.sector_distance,
+        angular_deviation_deg: ped.angular_deviation_deg,
+        classification: ped.direction_classification,
+        direction_confidence: ped.direction_confidence,
+        reason: ped.direction_reason,
+        final_visual_state: ped.visual_state,
+        dx: (ped.direction_vector || [])[0],
+        dy: (ped.direction_vector || [])[1],
+        allowed_directions: ped.allowed_directions,
+      };
+      const dx = d.dx ?? (d.direction_vector || [])[0];
+      const dy = d.dy ?? (d.direction_vector || [])[1];
+      diagEl.textContent = [
+        `id=${d.track_id ?? ped.track_id ?? ped.id}  dx=${dx ?? '—'}  dy=${dy ?? '—'}`,
+        `est=${d.estimated_direction || ped.direction}  conf=${(d.direction_confidence ?? ped.direction_confidence ?? 0).toFixed?.(2) ?? d.direction_confidence}`,
+        `exp=${d.expected_direction || '—'}  sectorΔ=${d.sector_distance ?? ped.sector_distance ?? '—'}  allowed=${(d.allowed_directions || ped.allowed_directions || []).join(',') || '—'}`,
+        `class=${d.classification || ped.direction_classification || '—'}  state=${d.final_visual_state || ped.visual_state}`,
+        d.reason || ped.direction_reason || '',
+      ].join('\n');
+    }
   }
 
   startAnimationLoop() {
@@ -664,6 +886,20 @@ class DigitalTwinApp {
 
     // 4. Update Alerts Console Feed
     this.updateAlertsList(anomalies, data.active_alerts);
+    this.updateSelectionPanel();
+
+    // Sync playback speed and profile if reflected in payload
+    if (data.playback_speed !== undefined) {
+      this.updateSpeedUI(parseFloat(data.requested_playback_speed ?? data.playback_speed), parseFloat(data.achieved_playback_speed ?? data.playback_speed));
+    }
+    if (data.detection_profile && data.detection_profile !== this.selectedProfile && this.detectionProfileSelect) {
+      this.selectedProfile = data.detection_profile;
+      this.detectionProfileSelect.value = data.detection_profile;
+    }
+    if (this.monitoringModeBadge && data.monitoring_mode) {
+      this.monitoringModeBadge.textContent = `Mode: ${data.monitoring_mode}`;
+      this.monitoringModeBadge.className = `speed-badge mode-badge ${String(data.monitoring_mode).toLowerCase()}`;
+    }
 
     // 5. Render Synchronized 2D Digital Twin Map on Right Panel
     const direction = data.expected_direction || this.selectedDirection;
@@ -681,13 +917,49 @@ class DigitalTwinApp {
 
   formatAnomalyLabel(type) {
     const map = {
-      FALL_DETECTED: 'Fallen Pedestrian',
-      FALL_SUSPECTED: 'Suspected Fall',
       PROLONGED_STOPPING: 'Prolonged Stopping',
       WRONG_DIRECTION: 'Wrong Direction Flow',
-      RESTRICTED_ZONE_ENTRY: 'Restricted Zone Intrusion'
     };
     return map[type] || type.replace(/_/g, ' ');
+  }
+
+  isConfirmedAnomaly(p) {
+    if (!p) return false;
+    if (p.visual_state === 'anomaly') return true;
+    return !!(p.anomaly && (p.anomaly_type === 'WRONG_DIRECTION' || p.anomaly_type === 'PROLONGED_STOPPING'));
+  }
+
+  markerColor(p, isSelected) {
+    // Backend visual_state is authoritative. UNKNOWN → blue (not red).
+    // Selection never overwrites fill — amber is outline only.
+    if (this.isConfirmedAnomaly(p)) return this.COLOR_ANOMALY;
+    return this.COLOR_NORMAL;
+  }
+
+  placeMapLabel(anchorX, anchorY, textW, textH, occupied) {
+    const candidates = [
+      [8, -textH - 4], [-(textW + 8), -textH - 4], [8, 8],
+      [-(textW + 8), 8], [0, -textH - 18], [0, 16],
+      [textW + 12, 0], [-(textW + 12), 0],
+    ];
+    for (const [ox, oy] of candidates) {
+      const lx = anchorX + ox;
+      const ly = anchorY + oy;
+      const rect = { x1: lx, y1: ly, x2: lx + textW, y2: ly + textH };
+      let hit = false;
+      for (const o of occupied) {
+        if (!(rect.x2 < o.x1 || rect.x1 > o.x2 || rect.y2 < o.y1 || rect.y1 > o.y2)) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) {
+        occupied.push(rect);
+        return { lx, ly, leader: Math.abs(ox) > 10 || Math.abs(oy) > textH + 6 };
+      }
+    }
+    occupied.push({ x1: anchorX + 8, y1: anchorY - textH - 4, x2: anchorX + 8 + textW, y2: anchorY - 4 });
+    return { lx: anchorX + 8, ly: anchorY - textH - 4, leader: false };
   }
 
   updateAlertsList(anomalies, activeAlertsData) {
@@ -712,11 +984,8 @@ class DigitalTwinApp {
     }
 
     const priorityMap = {
-      FALL_DETECTED: 10,
-      FALL_SUSPECTED: 8,
-      RESTRICTED_ZONE_ENTRY: 6,
-      PROLONGED_STOPPING: 4,
-      WRONG_DIRECTION: 2
+      WRONG_DIRECTION: 4,
+      PROLONGED_STOPPING: 2
     };
     const sortedAnomalies = [...anomalies].sort((a, b) => {
       const pa = priorityMap[a.anomaly_type] || 0;
@@ -729,20 +998,19 @@ class DigitalTwinApp {
       const tid = a.track_id;
       const isSel = (tid === this.selectedTrackId);
       const atype = a.anomaly_type || 'ANOMALOUS_MOVEMENT';
-      const severity = a.severity || (atype === 'FALL_DETECTED' || atype === 'RESTRICTED_ZONE_ENTRY' || (a.stopping_duration_frames >= 90) ? 'CRITICAL' : 'WARNING');
+      const severity = a.severity || 'WARNING';
       const sevClass = (severity === 'CRITICAL') ? 'critical' : 'warning';
       const duration = a.duration_sec ? `${a.duration_sec}s` : (a.stopping_duration_sec ? `${a.stopping_duration_sec}s` : 'live');
       const ts = this.formatTimestamp(a.timestamp);
-      const isCoasting = (a.fall_tracking_state === 'LOST_COASTING' || a.is_live_observation === false || a.tracking_state === 'LOST_COASTING');
-      let typeLabel = this.formatAnomalyLabel(atype);
-      if (isCoasting) typeLabel += ' · coasting';
+      const typeLabel = this.formatAnomalyLabel(atype);
+      const zoneHint = a.evidence?.reason || a.zone_name || '';
 
       html += `
         <div class="incident-item ${sevClass} ${isSel ? 'selected' : ''}" data-track-id="${tid}">
           <div class="incident-id">#${tid}</div>
           <div class="incident-main">
             <div class="incident-type">${typeLabel}</div>
-            <div class="incident-meta">${ts} · ${duration}</div>
+            <div class="incident-meta">${ts} · ${duration}${zoneHint ? ' · ' + zoneHint : ''}</div>
           </div>
           <div class="incident-severity ${sevClass}">${severity}</div>
         </div>`;
@@ -824,27 +1092,17 @@ class DigitalTwinApp {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 4. Render Zones with Architectural Refinement
-    // Main Evacuation Corridor
-    this.drawArchitecturalZone(ctx, padX, padY, cw, ch, this.zonesConfig.evacuation_route[0], 'rgba(16, 185, 129, 0.05)', '#10b981', 'MAIN EVACUATION CORRIDOR');
-    // Restricted Security Zone
-    this.drawArchitecturalZone(ctx, padX, padY, cw, ch, this.zonesConfig.restricted[0], 'rgba(239, 68, 68, 0.09)', '#ef4444', 'RESTRICTED SECURITY ZONE (DANGER)');
-    // Safe Assembly Area
-    this.drawArchitecturalZone(ctx, padX, padY, cw, ch, this.zonesConfig.safe_zone[0], 'rgba(56, 189, 248, 0.08)', '#38bdf8', 'SAFE REFUGE AREA');
-    // Emergency Exit Zone
-    this.drawArchitecturalZone(ctx, padX, padY, cw, ch, this.zonesConfig.exit[0], 'rgba(245, 158, 11, 0.14)', '#f59e0b', 'EMERGENCY EXIT PORTAL');
-
-    // 5. Dynamic Evacuation Flow Chevrons along Corridor
+    // 4. Main evacuation corridor ONLY (subtle boundary + green flow)
+    const corridor = this.corridorConfig || (this.zonesConfig.evacuation_route || [])[0];
+    if (corridor) {
+      this.drawArchitecturalZone(
+        ctx, padX, padY, cw, ch, corridor,
+        'rgba(16, 185, 129, 0.04)', this.COLOR_CORRIDOR, ''
+      );
+    }
     this.drawCorridorFlowChevrons(ctx, padX, padY, cw, ch, expectedDirection);
 
-    // Quiet doorway hints
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.55)';
-    ctx.font = '600 9px sans-serif';
-    ctx.fillText('ENTRY', padX + 6, padY + ch * 0.38);
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.65)';
-    ctx.fillText('EXIT', padX + cw - 36, padY + ch * 0.33);
-
-    // Compact footnote: approximate projection
+    // Colour legend
     this.drawMapLegendAndFootnote(ctx, w, h);
 
     if (!pedestrians || pedestrians.length === 0) return;
@@ -855,12 +1113,18 @@ class DigitalTwinApp {
     const maxDisplacementPx = 65; // px in video space (aligned with config trajectory_max_displacement_px)
     const maxFrameGap = 10;       // aligned with config trajectory_max_frame_gap
 
+    // Apply zoom transform for dense crowds
+    ctx.save();
+    ctx.translate(w / 2 + this.mapPanX, h / 2 + this.mapPanY);
+    ctx.scale(this.mapZoom, this.mapZoom);
+    ctx.translate(-w / 2, -h / 2);
+
     for (const p of pedestrians) {
-      const isAnomaly = !!p.anomaly;
+      const isAnomaly = this.isConfirmedAnomaly(p);
       const isSelected = (this.selectedTrackId !== null && p.track_id === this.selectedTrackId);
       const trail = p.trajectory;
 
-      // Reduce visual clutter: only draw trails for selected or anomalous tracks
+      // Trails only for selected / anomalous
       if (!(isSelected || isAnomaly)) continue;
 
       if (trail && trail.length > 1) {
@@ -929,12 +1193,21 @@ class DigitalTwinApp {
       return ya - yb;
     });
 
+    // Zoom-dependent label density: show all markers; sparse labels when zoomed out
+    const showAllLabels = this.mapZoom >= 1.35 || pedestrians.length <= 40;
+    const labelPriority = [...sortedPedestrians].sort((a, b) => {
+      const sa = this.isConfirmedAnomaly(a) || a.track_id === this.selectedTrackId ? 1 : 0;
+      const sb = this.isConfirmedAnomaly(b) || b.track_id === this.selectedTrackId ? 1 : 0;
+      return sb - sa;
+    });
+    const maxLabels = showAllLabels ? pedestrians.length : Math.min(24, pedestrians.length);
+    const labelIds = new Set(labelPriority.slice(0, maxLabels).map((p) => p.track_id));
+
     for (const p of sortedPedestrians) {
       const tid = p.track_id;
-      const isAnomaly = !!p.anomaly;
+      const isAnomaly = this.isConfirmedAnomaly(p);
       const isSelected = (this.selectedTrackId !== null && tid === this.selectedTrackId);
 
-      // Map bottom-center foot coordinates onto floor plan
       let rawX, rawY;
       if (p.bbox && p.bbox.length === 4) {
         rawX = (p.bbox[0] + p.bbox[2]) / 2;
@@ -948,146 +1221,80 @@ class DigitalTwinApp {
       const mapX = proj.mapX;
       const mapY = proj.mapY;
 
-      const isCoasting = (p.fall_tracking_state === 'LOST_COASTING' || p.is_live_observation === false);
-      // Color selection
-      let dotColor = isAnomaly ? '#ef4444' : '#38bdf8';
-      if (isCoasting) dotColor = '#f97316';
-      else if (p.anomaly_type === 'FALL_SUSPECTED') dotColor = '#f59e0b';
-      if (isSelected) dotColor = '#00f2fe';
+      // Fill from anomaly state only — selection uses amber outline
+      const dotColor = this.markerColor(p, isSelected);
 
-      // Anomaly Pulse Halo
       if (isAnomaly) {
         const pulseRadius = 10 + Math.sin(this.pulseAngle) * 3;
         ctx.beginPath();
         ctx.arc(mapX, mapY, pulseRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = (p.anomaly_type === 'FALL_SUSPECTED') ? 'rgba(245, 158, 11, 0.6)' : 'rgba(239, 68, 68, 0.5)';
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
 
-      // Selected Track Inspection Brackets & Pulsing Ring
       if (isSelected) {
         const selRadius = 13 + Math.sin(this.pulseAngle * 1.5) * 2;
         ctx.beginPath();
         ctx.arc(mapX, mapY, selRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = '#00f2fe';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = this.COLOR_SELECTED;
+        ctx.lineWidth = 2;
         ctx.stroke();
-
-        // 4 Corner Inspection Brackets
         const bSize = 6;
-        ctx.strokeStyle = '#fbbf24';
+        ctx.strokeStyle = this.COLOR_SELECTED;
         ctx.lineWidth = 1.5;
-        // TL
         ctx.beginPath(); ctx.moveTo(mapX - selRadius, mapY - selRadius + bSize); ctx.lineTo(mapX - selRadius, mapY - selRadius); ctx.lineTo(mapX - selRadius + bSize, mapY - selRadius); ctx.stroke();
-        // TR
         ctx.beginPath(); ctx.moveTo(mapX + selRadius - bSize, mapY - selRadius); ctx.lineTo(mapX + selRadius, mapY - selRadius); ctx.lineTo(mapX + selRadius, mapY - selRadius + bSize); ctx.stroke();
-        // BL
         ctx.beginPath(); ctx.moveTo(mapX - selRadius, mapY + selRadius - bSize); ctx.lineTo(mapX - selRadius, mapY + selRadius); ctx.lineTo(mapX - selRadius + bSize, mapY + selRadius); ctx.stroke();
-        // BR
         ctx.beginPath(); ctx.moveTo(mapX + selRadius - bSize, mapY + selRadius); ctx.lineTo(mapX + selRadius, mapY + selRadius); ctx.lineTo(mapX + selRadius, mapY + selRadius - bSize); ctx.stroke();
       }
 
-      // Pedestrian Center Dot
       ctx.beginPath();
-      ctx.arc(mapX, mapY, 5, 0, Math.PI * 2);
+      ctx.arc(mapX, mapY, isSelected || isAnomaly ? 5 : 3.5, 0, Math.PI * 2);
       ctx.fillStyle = dotColor;
       ctx.fill();
-      if (isCoasting) {
-        ctx.setLineDash([2, 2]);
-        ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        ctx.setLineDash([]);
-      } else {
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-      }
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
 
-      // Compact Tag Formatting: clean, crisp
+      if (!labelIds.has(tid) && !isSelected && !isAnomaly) continue;
+
       let tagText = `#${tid}`;
-      if (isSelected) {
-        tagText = `#${tid}`;
-      } else if (isCoasting) {
-        tagText = `#${tid}`;
-      } else if (isAnomaly) {
-        const shortMap = {
-          FALL_DETECTED: 'FALL',
-          FALL_SUSPECTED: 'FALL?',
-          PROLONGED_STOPPING: 'STOP',
-          WRONG_DIRECTION: 'REV',
-          RESTRICTED_ZONE_ENTRY: 'ZONE'
-        };
-        const sType = shortMap[p.anomaly_type] || 'ALRT';
-        tagText = `#${tid} · ${sType}`;
+      if (isAnomaly) {
+        const shortMap = { PROLONGED_STOPPING: 'STOP', WRONG_DIRECTION: 'DIR' };
+        tagText = `#${tid} · ${shortMap[p.anomaly_type] || 'ALRT'}`;
       }
 
       ctx.font = '600 9.5px sans-serif';
       const tw = ctx.measureText(tagText).width;
       const tagW = tw + 8;
       const tagH = 16;
+      const placed = this.placeMapLabel(mapX, mapY, tagW, tagH, occupiedLabelRects);
+      const chosen = {
+        x1: placed.lx, y1: placed.ly, x2: placed.lx + tagW, y2: placed.ly + tagH,
+        needLeader: placed.leader,
+      };
 
-      // Candidate Label Positions around the dot
-      const candidates = [
-        { x: mapX + 8, y: mapY - 8, needLeader: false },
-        { x: mapX - tagW - 8, y: mapY - 8, needLeader: false },
-        { x: mapX + 8, y: mapY - tagH - 8, needLeader: true },
-        { x: mapX - tagW - 8, y: mapY - tagH - 8, needLeader: true },
-        { x: mapX - tagW / 2, y: mapY + 10, needLeader: true },
-        { x: mapX + 8, y: mapY - tagH * 2 - 10, needLeader: true }
-      ];
-
-      let chosen = null;
-      for (const cand of candidates) {
-        const cx1 = Math.max(padX + 2, Math.min(padX + cw - tagW - 2, cand.x));
-        const cy1 = Math.max(padY + 2, Math.min(padY + ch - tagH - 2, cand.y));
-        const cx2 = cx1 + tagW;
-        const cy2 = cy1 + tagH;
-
-        let collides = false;
-        for (const r of occupiedLabelRects) {
-          if (!(cx2 < r.x1 || cx1 > r.x2 || cy2 < r.y1 || cy1 > r.y2)) {
-            collides = true;
-            break;
-          }
-        }
-
-        if (!collides) {
-          chosen = { x1: cx1, y1: cy1, x2: cx2, y2: cy2, needLeader: cand.needLeader };
-          break;
-        }
-      }
-
-      if (!chosen) {
-        const cx1 = Math.max(padX + 2, Math.min(padX + cw - tagW - 2, mapX + 8));
-        const cy1 = Math.max(padY + 2, Math.min(padY + ch - tagH - 2, mapY - 8));
-        chosen = { x1: cx1, y1: cy1, x2: cx1 + tagW, y2: cy1 + tagH, needLeader: false };
-      }
-
-      occupiedLabelRects.push(chosen);
-
-      // Leader line if tag is offset
       if (chosen.needLeader) {
         ctx.beginPath();
         ctx.moveTo(mapX, mapY);
         ctx.lineTo(chosen.x1 + tagW / 2, chosen.y1 + tagH / 2);
-        ctx.strokeStyle = isSelected ? 'rgba(0, 242, 254, 0.6)' : (isAnomaly ? 'rgba(239, 68, 68, 0.45)' : 'rgba(56, 189, 248, 0.35)');
+        ctx.strokeStyle = isSelected
+          ? 'rgba(245, 158, 11, 0.7)'
+          : (isAnomaly ? 'rgba(239, 68, 68, 0.45)' : 'rgba(56, 189, 248, 0.35)');
         ctx.lineWidth = 1;
         ctx.stroke();
       }
 
-      // Tag Badge Background
-      ctx.fillStyle = isSelected ? 'rgba(10, 24, 38, 0.95)' : 'rgba(10, 15, 26, 0.9)';
+      ctx.fillStyle = 'rgba(10, 15, 26, 0.92)';
       ctx.fillRect(chosen.x1, chosen.y1, tagW, tagH);
-      ctx.strokeStyle = isSelected ? '#00f2fe' : (p.anomaly_type === 'FALL_SUSPECTED' ? '#f59e0b' : (isAnomaly ? '#ef4444' : 'rgba(56, 189, 248, 0.5)'));
+      ctx.strokeStyle = isSelected ? this.COLOR_SELECTED : (isAnomaly ? this.COLOR_ANOMALY : 'rgba(56, 189, 248, 0.5)');
       ctx.lineWidth = isSelected ? 1.5 : 1;
       ctx.strokeRect(chosen.x1, chosen.y1, tagW, tagH);
-
-      // Tag Text
-      ctx.fillStyle = isSelected ? '#38bdf8' : (p.anomaly_type === 'FALL_SUSPECTED' ? '#fde68a' : (isAnomaly ? '#fca5a5' : '#f8fafc'));
+      ctx.fillStyle = isAnomaly ? '#fca5a5' : '#f8fafc';
       ctx.fillText(tagText, chosen.x1 + 4, chosen.y1 + 11.5);
     }
+    ctx.restore();
   }
 
   drawArchitecturalZone(ctx, padX, padY, cw, ch, zone, fillStyle, strokeStyle, label) {
@@ -1141,25 +1348,29 @@ class DigitalTwinApp {
       let cx = padX + i * spacing;
       let cy = centerY;
 
-      if (direction === 'LEFT') {
+      const dir = String(direction || 'EAST').toUpperCase();
+      const goWest = dir === 'LEFT' || dir === 'WEST';
+      const goEast = dir === 'RIGHT' || dir === 'EAST';
+      const goNorth = dir === 'UP' || dir === 'NORTH';
+      const goSouth = dir === 'DOWN' || dir === 'SOUTH';
+
+      if (goWest) {
         cx -= this.flowAnimOffset;
         if (cx < padX + 20) cx += cw - 40;
-        // Draw left arrow <
         ctx.beginPath();
         ctx.moveTo(cx + 6, cy - 5);
         ctx.lineTo(cx, cy);
         ctx.lineTo(cx + 6, cy + 5);
         ctx.stroke();
-      } else if (direction === 'RIGHT') {
+      } else if (goEast || (!goNorth && !goSouth)) {
         cx += this.flowAnimOffset;
         if (cx > padX + cw - 20) cx -= cw - 40;
-        // Draw right arrow >
         ctx.beginPath();
         ctx.moveTo(cx - 6, cy - 5);
         ctx.lineTo(cx, cy);
         ctx.lineTo(cx - 6, cy + 5);
         ctx.stroke();
-      } else if (direction === 'UP') {
+      } else if (goNorth) {
         cy -= this.flowAnimOffset;
         if (cy < padY + 20) cy += ch - 40;
         ctx.beginPath();
@@ -1167,7 +1378,7 @@ class DigitalTwinApp {
         ctx.lineTo(cx, cy);
         ctx.lineTo(cx + 5, cy + 6);
         ctx.stroke();
-      } else if (direction === 'DOWN') {
+      } else if (goSouth) {
         cy += this.flowAnimOffset;
         if (cy > padY + ch - 20) cy -= ch - 40;
         ctx.beginPath();
@@ -1181,25 +1392,35 @@ class DigitalTwinApp {
 
   drawMapLegendAndFootnote(ctx, w, h) {
     const lx = 28;
-    const ly = h - 22;
-    ctx.fillStyle = 'rgba(10, 15, 26, 0.75)';
-    ctx.fillRect(lx - 4, ly - 8, 168, 16);
+    const ly = h - 28;
+    ctx.fillStyle = 'rgba(10, 15, 26, 0.82)';
+    ctx.fillRect(lx - 6, ly - 10, 268, 22);
 
     ctx.font = '500 9px sans-serif';
-    ctx.fillStyle = '#38bdf8';
-    ctx.beginPath(); ctx.arc(lx + 4, ly, 3, 0, Math.PI * 2); ctx.fill();
+    // Blue = normal
+    ctx.fillStyle = this.COLOR_NORMAL;
+    ctx.beginPath(); ctx.arc(lx + 4, ly, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('Person', lx + 11, ly + 3);
-
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath(); ctx.arc(lx + 58, ly, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillText('Normal', lx + 12, ly + 3);
+    // Red = anomaly
+    ctx.fillStyle = this.COLOR_ANOMALY;
+    ctx.beginPath(); ctx.arc(lx + 68, ly, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('Alert', lx + 65, ly + 3);
+    ctx.fillText('Anomaly', lx + 76, ly + 3);
+    // Amber = selected
+    ctx.strokeStyle = this.COLOR_SELECTED;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(lx + 140, ly, 4, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('Selected', lx + 150, ly + 3);
+    // Green = corridor flow
+    ctx.fillStyle = this.COLOR_CORRIDOR;
+    ctx.fillText('Flow →', lx + 210, ly + 3);
 
     ctx.fillStyle = 'rgba(148, 163, 184, 0.55)';
-    ctx.font = '500 8.5px monospace';
+    ctx.font = '500 8px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('Approximate projection (uncalibrated)', w - 28, h - 14);
+    ctx.fillText(`Zoom ${this.mapZoom.toFixed(2)}× · scroll to zoom`, w - 28, h - 10);
     ctx.textAlign = 'left';
   }
 
@@ -1211,7 +1432,9 @@ class DigitalTwinApp {
     if (this.zonesModal) {
       this.zonesModal.classList.add('active');
       if (this.cfgZonesJson) {
-        this.cfgZonesJson.value = JSON.stringify(this.zonesConfig, null, 2);
+        this.cfgZonesJson.value = JSON.stringify({
+          evacuation_corridor: this.corridorConfig,
+        }, null, 2);
       }
     }
   }
@@ -1224,11 +1447,13 @@ class DigitalTwinApp {
 
   async saveZonesConfig() {
     try {
-      const newZones = JSON.parse(this.cfgZonesJson.value);
-      this.zonesConfig = newZones;
+      const parsed = JSON.parse(this.cfgZonesJson.value);
+      const corr = parsed.evacuation_corridor || parsed;
+      this.corridorConfig = corr;
+      this.zonesConfig = { evacuation_route: [corr] };
 
       const payload = {
-        zones: newZones,
+        evacuation_corridor: corr,
         direction: this.selectedDirection,
         speed_threshold: parseFloat(this.cfgSpeedThreshold.value) || 0.6,
         stopping_frames: parseInt(this.cfgStoppingFrames.value, 10) || 30
@@ -1241,10 +1466,11 @@ class DigitalTwinApp {
       });
 
       if (res.ok) {
-        this.showToast('Evacuation zones & detection thresholds updated successfully', 'success');
+        this.showToast('Evacuation corridor & thresholds updated', 'success');
         this.closeZonesModal();
       } else {
-        this.showToast('Failed to save zones to server', 'error');
+        const err = await res.json().catch(() => ({}));
+        this.showToast(err.message || 'Failed to save corridor config', 'error');
       }
     } catch (e) {
       this.showToast('Invalid JSON format: ' + e.message, 'error');
@@ -1252,26 +1478,19 @@ class DigitalTwinApp {
   }
 
   resetZonesToDefault() {
-    this.zonesConfig = {
-      restricted: [
-        { name: 'RESTRICTED SECURITY ZONE', points: [[0.30, 0.22], [0.68, 0.22], [0.68, 0.54], [0.30, 0.54]] }
-      ],
-      evacuation_route: [
-        { name: 'MAIN EVACUATION CORRIDOR', points: [[0.06, 0.16], [0.94, 0.16], [0.94, 0.84], [0.06, 0.84]] }
-      ],
-      safe_zone: [
-        { name: 'SAFE REFUGE AREA', points: [[0.74, 0.06], [0.96, 0.06], [0.96, 0.32], [0.74, 0.32]] }
-      ],
-      exit: [
-        { name: 'EMERGENCY FIRE EXIT', points: [[0.90, 0.42], [0.97, 0.42], [0.97, 0.64], [0.90, 0.64]] }
-      ]
+    this.corridorConfig = {
+      name: 'MAIN EVACUATION CORRIDOR',
+      points: [[0.06, 0.16], [0.94, 0.16], [0.94, 0.84], [0.06, 0.84]],
+      flow_line: [[0.08, 0.50], [0.92, 0.50]],
+      expected_direction: 'LEFT',
     };
+    this.zonesConfig = { evacuation_route: [this.corridorConfig] };
     if (this.cfgZonesJson) {
-      this.cfgZonesJson.value = JSON.stringify(this.zonesConfig, null, 2);
+      this.cfgZonesJson.value = JSON.stringify({ evacuation_corridor: this.corridorConfig }, null, 2);
     }
     if (this.cfgSpeedThreshold) this.cfgSpeedThreshold.value = '0.6';
     if (this.cfgStoppingFrames) this.cfgStoppingFrames.value = '30';
-    this.showToast('Reset zones configuration to factory defaults', 'info');
+    this.showToast('Reset to default evacuation corridor', 'info');
   }
 
   showToast(message, type = 'info') {
@@ -1301,3 +1520,72 @@ if (document.readyState === 'loading') {
 } else {
   initDigitalTwinApp();
 }
+
+
+// =========================================================================
+// Global Debug Panel (Ctrl+Shift+D) — shows per-track pipeline state
+// =========================================================================
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+    e.preventDefault();
+    const panel = document.getElementById('debugPanel');
+    if (!panel) return;
+    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+    if (panel.style.display === 'block' && window.app) {
+      window.app._updateDebugPanel();
+    }
+  }
+});
+
+// Add _updateDebugPanel to the DigitalTwinApp prototype
+DigitalTwinApp.prototype._updateDebugPanel = function () {
+  const el = document.getElementById('debugPanelContent');
+  if (!el) return;
+  const app = this;
+  const lines = [];
+  lines.push(`RUNTIME: ${app._lastRuntimeId || '—'}  WS: ${app.ws ? (app.ws.readyState === 1 ? 'OPEN' : 'CLOSED') : 'NONE'}`);
+  lines.push(`EXPECTED_DIR: ${app.selectedDirection}  CLASSIFIER: ${app._lastClassifierVersion || '—'}`);
+  lines.push(`DETECTION_PROFILE: ${(app._lastDetectionProfile || app.selectedProfile || 'balanced').toUpperCase()}  SPEED (Req/Act): ${app._lastPlaybackSpeed || app.selectedSpeed || 1.0}x / ${(app._lastAchievedSpeed ?? app.selectedSpeed ?? 1.0).toFixed(2)}x`);
+  lines.push(`TRACKS: ${(app.currentPedestrians || []).length}  ANOMALIES: ${(app.currentPedestrians || []).filter(p => app.isConfirmedAnomaly(p)).length}`);
+  lines.push(`CONF_THRESH: ${app._lastConfThresh ?? '—'}  IMGSZ: ${app._lastInferenceImgsz ?? '—'}  INFER_MS: ${app._lastInferMs ?? '—'}  EFF_FPS: ${app._lastEffectiveFps ?? '—'}`);
+  lines.push(`MODE: ${app._lastMonitoringMode || 'NORMAL'}  SKIPPED: ${app._lastFramesSkipped || 0}  PROC_FPS: ${app._lastProcFps ?? '—'}  POLICY_MAX_SKIP: ${(app._lastAdaptivePolicy || {}).max_skip_allowed ?? '—'}`);
+  lines.push('─'.repeat(50));
+  const peds = (app.currentPedestrians || []).slice(0, 10);
+  for (const p of peds) {
+    const vs = p.visual_state || 'unknown';
+    const anom = app.isConfirmedAnomaly(p);
+    const diag = p.direction_diagnostics || {};
+    lines.push(
+      `#${p.track_id}  dir=${p.direction || '—'}  cls=${p.direction_classification || '—'}` +
+      `  sectorΔ=${p.sector_distance ?? '—'}  vs=${vs}  ${anom ? '🔴 ANOMALY' : '🔵 normal'}`
+    );
+    if (diag.reason) {
+      lines.push(`  reason: ${String(diag.reason).slice(0, 60)}`);
+    }
+  }
+  el.textContent = lines.join('\n');
+  // Auto-refresh while panel is open
+  if (document.getElementById('debugPanel').style.display === 'block') {
+    clearTimeout(app._debugRefreshTimer);
+    app._debugRefreshTimer = setTimeout(() => app._updateDebugPanel(), 300);
+  }
+};
+
+// Hook into renderLiveFrame to capture runtime metadata for the debug panel
+const _origRenderLiveFrame = DigitalTwinApp.prototype.renderLiveFrame;
+DigitalTwinApp.prototype.renderLiveFrame = function (data) {
+  if (data.runtime_id) this._lastRuntimeId = data.runtime_id;
+  if (data.classifier_version) this._lastClassifierVersion = data.classifier_version;
+  if (data.detection_profile) this._lastDetectionProfile = data.detection_profile;
+  if (data.playback_speed !== undefined) this._lastPlaybackSpeed = data.playback_speed;
+  if (data.achieved_playback_speed !== undefined) this._lastAchievedSpeed = data.achieved_playback_speed;
+  if (data.effective_playback_fps !== undefined) this._lastEffectiveFps = data.effective_playback_fps;
+  if (data.detection_confidence !== undefined) this._lastConfThresh = data.detection_confidence;
+  if (data.inference_imgsz !== undefined) this._lastInferenceImgsz = data.inference_imgsz;
+  if (data.infer_ms !== undefined) this._lastInferMs = data.infer_ms;
+  if (data.processing_fps !== undefined) this._lastProcFps = data.processing_fps;
+  if (data.frames_skipped !== undefined) this._lastFramesSkipped = data.frames_skipped;
+  if (data.monitoring_mode) this._lastMonitoringMode = data.monitoring_mode;
+  if (data.adaptive_policy) this._lastAdaptivePolicy = data.adaptive_policy;
+  _origRenderLiveFrame.call(this, data);
+};

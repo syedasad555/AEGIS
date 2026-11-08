@@ -1,292 +1,468 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Evacuation Context Anomaly Engine
-=================================
-Explainable rule-based anomaly detection for evacuation monitoring:
-  Rule 1: WRONG_DIRECTION — Movement opposing configured evacuation flow
-  Rule 2: PROLONGED_STOPPING — Pedestrian stationary for longer than allowed threshold
-  Rule 3: RESTRICTED_ZONE_ENTRY — Foot position located inside a designated restricted polygon
+Anomaly Detection Engine — direction mismatch + prolonged stopping
+==================================================================
+Responsibilities:
+  - DirectionClassifier → NORMAL / ANOMALY / UNKNOWN vs admin expected direction
+  - Persistence / cooldown / resolve for WRONG_DIRECTION
+  - PROLONGED_STOPPING (stationary beyond threshold) — separate from direction
+
+Colour contract (visual_state):
+  normal   → BLUE   (classification NORMAL, or UNKNOWN without other anomaly)
+  anomaly  → RED    (confirmed persistent WRONG_DIRECTION or PROLONGED_STOPPING)
+  unknown  → BLUE   (insufficient history — never red for direction alone)
+
+Fall detection removed.
 """
 
-import json
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from __future__ import annotations
 
+import json
+import time
+import uuid
+from collections import defaultdict, deque
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from fall_detection import FallDetector
+    from feature_extraction import TrajectoryFeatureExtractor
+    from direction_estimation import (
+        DirectionClassifier,
+        normalize_direction_label,
+        angular_deviation_deg,
+    )
 except ImportError:
-    from scripts.fall_detection import FallDetector
+    from scripts.feature_extraction import TrajectoryFeatureExtractor
+    from scripts.direction_estimation import (
+        DirectionClassifier,
+        normalize_direction_label,
+        angular_deviation_deg,
+    )
+
+
+def _new_event_id() -> str:
+    return str(uuid.uuid4())
+
+
+@dataclass
+class AnomalyEvent:
+    event_id: str
+    event_type: str
+    camera_id: str
+    track_id: int
+    timestamp: float
+    severity: str
+    evidence: Dict[str, Any]
+    duration_sec: float = 0.0
+    status: str = "ACTIVE"
+    frame: int = 0
+    zone_id: str = "corridor_main"
+    zone_name: str = "Main Evacuation Corridor"
+    last_seen: float = field(default_factory=time.time)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
 class EvacuationAnomalyEngine:
-    """Rule-based anomaly detection engine tailored for evacuation scenarios with dedicated fall detection."""
+    ALLOWED_TYPES = frozenset({"WRONG_DIRECTION", "PROLONGED_STOPPING"})
 
-    OPPOSITE_DIRECTIONS = {
-        "RIGHT": "LEFT",
-        "LEFT": "RIGHT",
-        "UP": "DOWN",
-        "DOWN": "UP",
-    }
-
-    def __init__(self, config: Dict[str, Any], fall_detector: Optional[FallDetector] = None):
+    def __init__(self, config: Dict[str, Any], camera_id: str = "cam_01"):
         self.config = config
-        self.expected_dir = config.get("expected_evacuation_direction", "RIGHT").upper()
-        self.opposite_dir = self.OPPOSITE_DIRECTIONS.get(self.expected_dir, "LEFT")
-        self.stopping_thresh_frames = config.get("prolonged_stopping_frames", 30)
+        self.camera_id = camera_id
+        self.feature_extractor = TrajectoryFeatureExtractor(config)
+        self.fall_detector = None
+        self.classifier = DirectionClassifier(config)
 
-        # Fall detector integration
-        if fall_detector is not None:
-            self.fall_detector = fall_detector
-        else:
-            self.fall_detector = FallDetector(config)
+        stop_cfg = config.get("stopping_detection", {})
+        self.stopping_threshold_sec = float(
+            stop_cfg.get("threshold_sec", max(1.0, config.get("prolonged_stopping_frames", 45) / 30.0))
+        )
+        self.stopping_min_frames = int(
+            stop_cfg.get("min_frames", config.get("prolonged_stopping_frames", 45))
+        )
+        self.stopping_critical_sec = float(stop_cfg.get("critical_sec", 20.0))
+        self.enable_prolonged_stopping = bool(stop_cfg.get("enabled", True))
 
-        # Event log storage
+        dir_cfg = config.get("direction_detection", {})
+        # Persistence: frames of consistent ANOMALY classification before RED
+        self.wrong_dir_sustain_frames = int(dir_cfg.get("wrong_way_sustain_frames", dir_cfg.get("persistence_frames", 3)))
+        self.recovery_frames = int(dir_cfg.get("recovery_frames", 4))
+        self.wrong_dir_cooldown_sec = float(dir_cfg.get("cooldown_sec", 4.0))
+        self.require_in_corridor = bool(dir_cfg.get("require_in_corridor", False))
+
+        self.active_events: Dict[Tuple[str, int], AnomalyEvent] = {}
+        self.event_history: deque = deque(maxlen=int(config.get("anomaly_history_max", 200)))
         self.anomaly_events: List[Dict[str, Any]] = []
-        # Per-track anomaly onset frame: {track_id: start_frame}
-        self.track_anomaly_start: Dict[int, int] = {}
+        self.track_anomaly_start: Dict[Tuple[str, int], float] = {}
+        self.wrong_dir_counters: Dict[int, int] = defaultdict(int)
+        self.recovery_counters: Dict[int, int] = defaultdict(int)
+        self.last_fire_time: Dict[Tuple[str, int], float] = {}
+        self._ack_ids: set = set()
+        self.frame_anomalies: List[Dict[str, Any]] = []
+        self.diagnostic_mode = bool(config.get("direction_diagnostic_mode", False))
+
+        # Live admin expected direction (after counters exist)
+        ed = config.get("expected_evacuation_direction")
+        if ed:
+            self.set_expected_direction(ed)
+
+    def set_expected_direction(self, label: str):
+        """Hot-update expected flow without restarting the pipeline."""
+        old = getattr(self.classifier, "expected", None)
+        self.classifier.set_expected_direction(label)
+        new = self.classifier.expected
+        # Clear pending sustain + active WRONG_DIRECTION so live reclass is immediate
+        if hasattr(self, "wrong_dir_counters"):
+            self.wrong_dir_counters.clear()
+        if hasattr(self, "recovery_counters"):
+            self.recovery_counters.clear()
+        if hasattr(self, "active_events"):
+            for key in [k for k in self.active_events if k[0] == "WRONG_DIRECTION"]:
+                self.active_events.pop(key, None)
+        if hasattr(self, "last_fire_time"):
+            for key in [k for k in list(self.last_fire_time) if k[0] == "WRONG_DIRECTION"]:
+                self.last_fire_time.pop(key, None)
+        print(
+            f"[AnomalyEngine] EXPECTED_DIRECTION_CHANGED: "
+            f"OLD_DIRECTION={old} NEW_DIRECTION={new} "
+            f"ACTIVE_CLASSIFIER_DIRECTION={self.classifier.expected}",
+            flush=True,
+        )
 
     def reset(self):
-        """Reset logged events and active anomaly state."""
+        self.feature_extractor.reset()
+        self.active_events.clear()
+        self.event_history.clear()
         self.anomaly_events.clear()
         self.track_anomaly_start.clear()
-        if self.fall_detector:
-            self.fall_detector.reset()
+        self.wrong_dir_counters.clear()
+        self.recovery_counters.clear()
+        self.last_fire_time.clear()
+        self.frame_anomalies.clear()
+        self._ack_ids.clear()
+
+    def acknowledge(self, event_id: str) -> bool:
+        self._ack_ids.add(event_id)
+        for key, ev in list(self.active_events.items()):
+            if ev.event_id == event_id:
+                ev.status = "ACKNOWLEDGED"
+                return True
+        for ev_d in self.event_history:
+            if ev_d.get("event_id") == event_id:
+                ev_d["status"] = "ACKNOWLEDGED"
+                return True
+        return False
 
     def evaluate_pedestrian(
         self,
-        feature: Dict[str, Any],
-        frame_img: Optional[Any] = None,
-        frame_h: int = 1080,
-        frame_w: int = 1920
+        features: Dict[str, Any],
+        frame_img: Any = None,
+        frame_h: int = 0,
+        frame_w: int = 0,
+        **_kwargs,
     ) -> Dict[str, Any]:
-        """
-        Evaluates rules for a single pedestrian's feature dict.
-        Modifies feature in-place and returns updated dict with anomaly status, type, severity, and duration.
-        """
-        track_id = feature["track_id"]
-        frame = feature["frame"]
-        timestamp = feature["timestamp"]
-        direction = feature["direction"]
-        stopping_frames = feature["stopping_duration_frames"]
-        zone_type = feature["zone_type"]
-        bbox = feature["bbox"]
-        speed_px_sec = feature.get("speed_px_sec", 0.0)
+        feat = dict(features)
+        ts = float(feat.get("timestamp", time.time()))
+        frame = int(feat.get("frame", 0))
+        tid = int(feat.get("track_id", -1))
 
-        anomalies_detected: List[str] = []
-
-        # Rule 0: Fallen Pedestrian Detection
-        fall_res = {"status": "NORMAL", "confidence": 0.0, "reasons": []}
-        if self.fall_detector is not None:
-            fall_res = self.fall_detector.evaluate_pedestrian(
-                track_id=track_id,
-                bbox=tuple(bbox),
-                frame_idx=frame,
-                frame_h=frame_h,
-                frame_w=frame_w,
-                frame_img=frame_img,
-                speed_px_sec=speed_px_sec
+        feat["direction"] = normalize_direction_label(feat.get("direction", "UNKNOWN"))
+        if "stopping_duration_sec" not in feat:
+            feat["stopping_duration_sec"] = round(
+                int(feat.get("stopping_duration_frames", 0)) / 30.0, 2
             )
-            if fall_res["status"] in ("FALL_DETECTED", "FALL_CONFIRMED"):
-                anomalies_detected.append("FALL_DETECTED")
-            elif fall_res["status"] == "FALL_SUSPECTED":
-                anomalies_detected.append("FALL_SUSPECTED")
 
-        # Rule 1: Wrong Direction Check
-        # Suppress WRONG_DIRECTION when the track has insufficient history (< 8 frames)
-        # or unreliable movement (speed exceeding unphysical threshold > 350 px/sec)
-        history_len = len(feature.get("trajectory", [])) if "trajectory" in feature else feature.get("frame", 10)
-        min_dir_hist = int(self.config.get("trajectory_min_history_for_direction", 8))
-        is_reliable_movement = (
-            history_len >= min_dir_hist
-            and 5.0 <= speed_px_sec <= 350.0
+        # --- Direction classification (authoritative) ---
+        expected = self.classifier.expected
+        clf = self.classifier.classify(feat, expected=expected)
+        feat["expected_direction"] = clf["expected_direction"]
+        feat["angular_deviation_deg"] = clf["angular_deviation_deg"]
+        feat["sector_distance"] = clf.get("sector_distance")
+        feat["allowed_directions"] = clf.get("allowed_directions") or []
+        feat["direction_classification"] = clf["classification"]  # NORMAL|ANOMALY|UNKNOWN
+        feat["direction_reason"] = clf["reason"]
+
+        all_anomalies: List[str] = []
+        primary = "NORMAL"
+        severity = "NORMAL"
+        duration_sec = 0.0
+        event_id = None
+        evidence: Dict[str, Any] = {}
+        # Default: unknown/normal stay blue
+        visual_state = "normal"
+        if clf["classification"] == "UNKNOWN":
+            visual_state = "unknown"
+
+        w = self._eval_wrong_direction(feat, clf, frame, ts)
+        if w:
+            all_anomalies.append("WRONG_DIRECTION")
+            primary, severity, duration_sec, event_id, evidence = w
+            visual_state = "anomaly"
+
+        if self.enable_prolonged_stopping:
+            s = self._eval_prolonged_stopping(feat, frame, ts)
+            if s:
+                all_anomalies.append("PROLONGED_STOPPING")
+                if primary == "NORMAL":
+                    primary, severity, duration_sec, event_id, evidence = s
+                    visual_state = "anomaly"
+
+        feat["anomaly"] = primary != "NORMAL"
+        feat["anomaly_type"] = primary
+        feat["all_anomalies"] = all_anomalies
+        feat["severity"] = severity
+        feat["duration_sec"] = duration_sec
+        feat["event_id"] = event_id
+        feat["evidence"] = evidence
+        feat["visual_state"] = visual_state
+        feat["is_live_observation"] = True
+        feat["fall_status"] = "DISABLED"
+        feat["fall_confidence"] = 0.0
+        feat["fall_reasons"] = []
+        feat["fall_event_id"] = None
+        feat["fall_tracking_state"] = "TRACKED"
+
+        # Always attach diagnostics so CCTV / twin can show why a track is blue/red
+        dvec = feat.get("direction_vector") or [0.0, 0.0]
+        feat["direction_diagnostics"] = {
+            "track_id": tid,
+            "foot": feat.get("foot"),
+            "dx": dvec[0] if len(dvec) > 0 else 0.0,
+            "dy": dvec[1] if len(dvec) > 1 else 0.0,
+            "direction_vector": dvec,
+            "estimated_direction": feat.get("direction"),
+            "direction_confidence": feat.get("direction_confidence"),
+            "direction_reliable": feat.get("direction_reliable"),
+            "expected_direction": expected,
+            "allowed_directions": feat.get("allowed_directions"),
+            "sector_distance": feat.get("sector_distance"),
+            "angular_deviation_deg": feat.get("angular_deviation_deg"),
+            "classification": clf["classification"],
+            "final_visual_state": visual_state,
+            "reason": clf["reason"] if primary == "NORMAL" else (evidence.get("reason") or clf["reason"]),
+            "sustain_frames": self.wrong_dir_counters.get(tid, 0),
+            "sustain_required": self.wrong_dir_sustain_frames,
+            "anomaly_type": primary,
+            "trajectory": feat.get("trajectory"),
+            "coordinate_space": "image",  # dx/dy are image-plane, not calibrated ground
+        }
+        return feat
+
+    def _eval_wrong_direction(
+        self, f: Dict[str, Any], clf: Dict[str, Any], frame: int, ts: float
+    ) -> Optional[Tuple[str, str, float, str, Dict]]:
+        tid = int(f.get("track_id", -1))
+        ev_key = ("WRONG_DIRECTION", tid)
+
+        if self.require_in_corridor and not bool(f.get("in_corridor", True)):
+            self.wrong_dir_counters[tid] = 0
+            self.recovery_counters[tid] = 0
+            if ev_key in self.active_events:
+                self._resolve_event(ev_key, ts)
+            return None
+
+        classification = clf["classification"]
+
+        if classification == "NORMAL":
+            # Clearly moving in an allowed direction: reset wrong-dir counter immediately
+            self.wrong_dir_counters[tid] = 0
+            if ev_key in self.active_events:
+                self.recovery_counters[tid] += 1
+                if self.recovery_counters[tid] >= self.recovery_frames:
+                    self._resolve_event(ev_key, ts)
+                    self.recovery_counters[tid] = 0
+            return None
+
+        if classification != "ANOMALY":
+            # Insufficient / stationary / UNKNOWN movement.
+            # Do not immediately zero out a pending wrong-direction sequence on a single jitter frame;
+            # use a leaky decrement to provide 1-frame jitter tolerance while still requiring
+            # true sustained ANOMALY evidence to reach RED.
+            if self.wrong_dir_counters[tid] > 0:
+                self.wrong_dir_counters[tid] = max(0, self.wrong_dir_counters[tid] - 1)
+
+            if ev_key in self.active_events:
+                # Active RED event: require sustained non-anomaly frames to resolve so track doesn't flicker on 1-frame jitter
+                self.recovery_counters[tid] += 1
+                resolve_thresh = max(2, self.recovery_frames // 2) if classification in ("UNKNOWN", "STATIONARY") else self.recovery_frames
+                if self.recovery_counters[tid] >= resolve_thresh:
+                    self._resolve_event(ev_key, ts)
+                    self.recovery_counters[tid] = 0
+                    return None
+                else:
+                    # Maintain active state during temporary 1-2 frame tracking gap
+                    ev = self.active_events[ev_key]
+                    if ev.status != "ACKNOWLEDGED":
+                        ev.last_seen = ts
+                        ev.duration_sec = round(ts - ev.timestamp, 2)
+                        return ("WRONG_DIRECTION", "WARNING", ev.duration_sec, ev.event_id, ev.evidence)
+            return None
+
+        # classification == ANOMALY
+        self.recovery_counters[tid] = 0
+        self.wrong_dir_counters[tid] += 1
+
+        evidence = {
+            "reason": clf["reason"],
+            "actual_direction": clf["actual_direction"],
+            "expected_direction": clf["expected_direction"],
+            "sector_distance": clf.get("sector_distance"),
+            "allowed_directions": clf.get("allowed_directions"),
+            "deviation_deg": clf["angular_deviation_deg"],
+            "sustain_frames": self.wrong_dir_counters[tid],
+            "direction_confidence": f.get("direction_confidence"),
+            "foot": f.get("foot"),
+            "speed_px_sec": f.get("speed_px_sec"),
+        }
+
+        if self.wrong_dir_counters[tid] < self.wrong_dir_sustain_frames:
+            return None  # not yet confirmed → stay blue
+
+        if ev_key in self.active_events:
+            ev = self.active_events[ev_key]
+            if ev.status == "ACKNOWLEDGED":
+                return None
+            ev.last_seen = ts
+            ev.duration_sec = round(ts - ev.timestamp, 2)
+            ev.evidence = evidence
+            return ("WRONG_DIRECTION", "WARNING", ev.duration_sec, ev.event_id, evidence)
+
+        last_fire = self.last_fire_time.get(ev_key, 0.0)
+        if last_fire > 0 and (ts - last_fire) < self.wrong_dir_cooldown_sec:
+            return None
+
+        self.last_fire_time[ev_key] = ts
+        ev = AnomalyEvent(
+            event_id=_new_event_id(),
+            event_type="WRONG_DIRECTION",
+            camera_id=self.camera_id,
+            track_id=tid,
+            timestamp=ts,
+            severity="WARNING",
+            evidence=evidence,
+            duration_sec=0.0,
+            status="ACTIVE",
+            frame=frame,
+            zone_id=str(f.get("zone_id") or "corridor_main"),
+            zone_name=str(f.get("zone_name") or "Main Evacuation Corridor"),
+            last_seen=ts,
         )
-        if direction == self.opposite_dir and is_reliable_movement:
-            anomalies_detected.append("WRONG_DIRECTION")
+        self.active_events[ev_key] = ev
+        self._record_event(ev)
+        return ("WRONG_DIRECTION", "WARNING", 0.0, ev.event_id, evidence)
 
-        # Rule 2: Prolonged Stopping Check (Suppressed if fall detected so fall takes precedence)
-        if stopping_frames >= self.stopping_thresh_frames:
-            anomalies_detected.append("PROLONGED_STOPPING")
+    def _eval_prolonged_stopping(
+        self, f: Dict[str, Any], frame: int, ts: float
+    ) -> Optional[Tuple[str, str, float, str, Dict]]:
+        stop_sec = float(f.get("stopping_duration_sec", 0.0))
+        stop_frames = int(f.get("stopping_duration_frames", 0))
+        meets = stop_frames >= self.stopping_min_frames and stop_sec >= self.stopping_threshold_sec
+        tid = int(f.get("track_id", -1))
+        ev_key = ("PROLONGED_STOPPING", tid)
 
-        # Rule 3: Restricted Zone Entry Check
-        if zone_type == "RESTRICTED_ZONE":
-            anomalies_detected.append("RESTRICTED_ZONE_ENTRY")
+        if not meets:
+            if ev_key in self.active_events:
+                self._resolve_event(ev_key, ts)
+            return None
 
-        is_anomalous = len(anomalies_detected) > 0
-        
-        # Priority order for primary anomaly:
-        # 1. FALL_DETECTED (Medical / immediate life safety emergency)
-        # 2. RESTRICTED_ZONE_ENTRY (Perimeter breach)
-        # 3. FALL_SUSPECTED (Potential incident under confirmation)
-        # 4. PROLONGED_STOPPING (Choke point congestion)
-        # 5. WRONG_DIRECTION (Evacuation counterflow)
-        if not is_anomalous:
-            primary_anomaly = "NORMAL"
-        elif "FALL_DETECTED" in anomalies_detected:
-            primary_anomaly = "FALL_DETECTED"
-        elif "RESTRICTED_ZONE_ENTRY" in anomalies_detected:
-            primary_anomaly = "RESTRICTED_ZONE_ENTRY"
-        elif "FALL_SUSPECTED" in anomalies_detected:
-            primary_anomaly = "FALL_SUSPECTED"
-        elif "PROLONGED_STOPPING" in anomalies_detected:
-            primary_anomaly = "PROLONGED_STOPPING"
-        else:
-            primary_anomaly = anomalies_detected[0]
+        severity = "CRITICAL" if stop_sec >= self.stopping_critical_sec else "WARNING"
+        evidence = {
+            "reason": "Stationary beyond configured threshold",
+            "stopping_duration_sec": stop_sec,
+            "stopping_duration_frames": stop_frames,
+            "foot": f.get("foot"),
+            "direction": f.get("direction"),
+        }
 
-        # Defensible Rule-Based Severity Classification:
-        # - CRITICAL: FALL_DETECTED, Restricted zone intrusion, severe blockage (>=3s), or multi-rule combinations
-        # - WARNING: FALL_SUSPECTED, Wrong-direction flow, or initial stopping (1s - 3s)
-        # - NORMAL: Compliant movement
-        if not is_anomalous:
-            severity = "NORMAL"
-            self.track_anomaly_start.pop(track_id, None)
-            duration_sec = 0.0
-        else:
-            if track_id not in self.track_anomaly_start:
-                self.track_anomaly_start[track_id] = frame
-            onset_frame = self.track_anomaly_start[track_id]
-            duration_sec = max(0.1, round((frame - onset_frame + 1) / max(self.config.get("fps", 30.0), 1.0), 1))
+        if ev_key in self.active_events:
+            ev = self.active_events[ev_key]
+            if ev.status == "ACKNOWLEDGED":
+                return None
+            ev.last_seen = ts
+            ev.duration_sec = stop_sec
+            ev.severity = severity
+            ev.evidence = evidence
+            return ("PROLONGED_STOPPING", severity, stop_sec, ev.event_id, evidence)
 
-            if "FALL_DETECTED" in anomalies_detected or "RESTRICTED_ZONE_ENTRY" in anomalies_detected:
-                severity = "CRITICAL"
-            elif stopping_frames >= 90:
-                severity = "CRITICAL"
-            elif len(anomalies_detected) > 1 and "FALL_SUSPECTED" not in anomalies_detected:
-                severity = "CRITICAL"
-            else:
-                severity = "WARNING"
+        ev = AnomalyEvent(
+            event_id=_new_event_id(),
+            event_type="PROLONGED_STOPPING",
+            camera_id=self.camera_id,
+            track_id=tid,
+            timestamp=ts,
+            severity=severity,
+            evidence=evidence,
+            duration_sec=stop_sec,
+            status="ACTIVE",
+            frame=frame,
+            zone_id=str(f.get("zone_id") or "corridor_main"),
+            zone_name=str(f.get("zone_name") or "Main Evacuation Corridor"),
+            last_seen=ts,
+        )
+        self.active_events[ev_key] = ev
+        self._record_event(ev)
+        return ("PROLONGED_STOPPING", severity, stop_sec, ev.event_id, evidence)
 
-        feature["anomaly"] = is_anomalous
-        feature["anomaly_type"] = primary_anomaly
-        feature["all_anomalies"] = anomalies_detected
-        feature["severity"] = severity
-        feature["duration_sec"] = duration_sec
-        feature["fall_status"] = fall_res["status"]
-        feature["fall_confidence"] = fall_res["confidence"]
-        feature["fall_reasons"] = fall_res["reasons"]
-        feature["fall_event_id"] = fall_res.get("event_id")
-        feature["fall_tracking_state"] = fall_res.get("tracking_state", "TRACKED")
-        feature["is_live_observation"] = fall_res.get("is_live_observation", True)
+    def _record_event(self, ev: AnomalyEvent):
+        d = ev.to_dict()
+        self.event_history.append(d)
+        self.anomaly_events.append(d)
+        self.track_anomaly_start[(ev.event_type, ev.track_id)] = ev.timestamp
 
-        if is_anomalous:
-            event = {
-                "track_id": track_id,
-                "frame": frame,
-                "timestamp": timestamp,
-                "anomaly_type": primary_anomaly,
-                "all_anomalies": anomalies_detected,
-                "severity": severity,
-                "duration_sec": duration_sec,
-                "x": feature["foot"][0],
-                "y": feature["foot"][1],
-                "speed": feature["speed_px_sec"],
-                "direction": direction,
-                "zone": zone_type,
-                "fall_confidence": fall_res["confidence"],
-                "fall_event_id": fall_res.get("event_id"),
-                "fall_tracking_state": fall_res.get("tracking_state", "TRACKED"),
-                "is_live_observation": fall_res.get("is_live_observation", True)
-            }
-            self.anomaly_events.append(event)
+    def _resolve_event(self, ev_key: Tuple[str, int], ts: float):
+        ev = self.active_events.pop(ev_key, None)
+        if ev is None or ev.status == "ACKNOWLEDGED":
+            return
+        ev.status = "RESOLVED"
+        ev.last_seen = ts
+        ev.duration_sec = round(ts - ev.timestamp, 2)
+        self.event_history.append(ev.to_dict())
 
-        return feature
-
-    def process_frame_persistence(
+    def process_frame(
         self,
+        tracks: List[Dict[str, Any]],
         frame_idx: int,
-        observed_track_ids: List[int],
-        raw_candidate_boxes: Optional[List[List[float]]] = None,
-        frame_img: Optional[Any] = None,
-        frame_h: int = 1080,
-        frame_w: int = 1920,
-        fps: float = 30.0
+        fps: float = 30.0,
+        timestamp: Optional[float] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Processes post-frame persistence for active fall tracks temporarily unobserved by ByteTrack.
-        Returns a list of feature dictionaries for coasting or spatially re-associated tracks.
-        """
-        if not self.fall_detector or not hasattr(self.fall_detector, "process_frame_persistence"):
-            return []
+        ts = timestamp if timestamp is not None else time.time()
+        out: List[Dict[str, Any]] = []
+        for track in tracks:
+            tid = int(track.get("track_id", track.get("id", -1)))
+            if tid < 0:
+                continue
+            bbox = track.get("bbox")
+            if bbox is None or len(bbox) < 4:
+                continue
+            bbox_t = (float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3]))
+            features = self.feature_extractor.update_pedestrian(tid, bbox_t, frame_idx, fps)
+            features["camera_id"] = self.camera_id
+            if timestamp is not None:
+                features["timestamp"] = ts
+            feat = self.evaluate_pedestrian(features)
+            if feat.get("anomaly"):
+                out.append(feat)
+        self.frame_anomalies = out
+        return out
 
-        persist_outputs = self.fall_detector.process_frame_persistence(
-            frame_idx=frame_idx,
-            observed_track_ids=observed_track_ids,
-            raw_candidate_boxes=raw_candidate_boxes,
-            frame_img=frame_img,
-            frame_h=frame_h,
-            frame_w=frame_w
-        )
+    def process_frame_persistence(self, *args, **kwargs) -> List[Dict[str, Any]]:
+        return []
 
-        persisted_features = []
-        for p_out in persist_outputs:
-            tid = p_out["track_id"]
-            st = p_out["status"]
-            tr_state = p_out.get("tracking_state", "LOST_COASTING")
-            is_live = p_out.get("is_live_observation", False)
-            bbox = p_out.get("last_known_bbox") or p_out.get("bbox", [0, 0, 10, 10])
+    def get_active_anomalies(self) -> List[Dict[str, Any]]:
+        return [e.to_dict() for e in self.active_events.values() if e.status == "ACTIVE"]
 
-            # Manage anomaly onset and duration
-            if tid not in self.track_anomaly_start:
-                self.track_anomaly_start[tid] = frame_idx
-            onset_frame = self.track_anomaly_start[tid]
-            duration_sec = max(0.1, round((frame_idx - onset_frame + 1) / max(fps, 1.0), 1))
-
-            primary_anomaly = "FALL_DETECTED" if st == "FALL_CONFIRMED" else "FALL_SUSPECTED"
-            severity = "CRITICAL" if primary_anomaly == "FALL_DETECTED" else "WARNING"
-
-            feat = {
-                "track_id": tid,
-                "frame": frame_idx,
-                "timestamp": round(frame_idx / max(fps, 1.0), 2),
-                "bbox": [float(v) for v in bbox],
-                "foot": [float((bbox[0] + bbox[2]) / 2.0), float(bbox[3])],
-                "speed_px_sec": 0.0,
-                "direction": "STATIONARY",
-                "zone_type": "NORMAL_ZONE",
-                "stopping_duration_frames": p_out.get("coasting_frames", 0),
-                "anomaly": True,
-                "anomaly_type": primary_anomaly,
-                "all_anomalies": [primary_anomaly],
-                "severity": severity,
-                "duration_sec": duration_sec,
-                "fall_status": st,
-                "fall_confidence": p_out.get("confidence", 0.60),
-                "fall_reasons": p_out.get("reasons", []),
-                "fall_event_id": p_out.get("event_id"),
-                "fall_tracking_state": tr_state,
-                "is_live_observation": is_live,
-                "coasting_frames": p_out.get("coasting_frames", 0),
-                "max_coasting_frames": p_out.get("max_coasting_frames", 60)
-            }
-
-            event = {
-                "track_id": tid,
-                "frame": frame_idx,
-                "timestamp": feat["timestamp"],
-                "anomaly_type": primary_anomaly,
-                "all_anomalies": [primary_anomaly],
-                "severity": severity,
-                "duration_sec": duration_sec,
-                "x": feat["foot"][0],
-                "y": feat["foot"][1],
-                "speed": 0.0,
-                "direction": "STATIONARY",
-                "zone": "NORMAL_ZONE",
-                "fall_confidence": feat["fall_confidence"],
-                "fall_event_id": feat["fall_event_id"],
-                "fall_tracking_state": tr_state,
-                "is_live_observation": is_live
-            }
-            self.anomaly_events.append(event)
-            persisted_features.append(feat)
-
-        return persisted_features
+    def get_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        return list(self.event_history)[-limit:]
 
     def export_anomaly_log(self, output_path: Path):
-        """Export logged anomaly events to JSON file."""
+        output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(self.anomaly_events, f, indent=2, ensure_ascii=False)
-        print(f"[AnomalyEngine] Logged {len(self.anomaly_events)} anomaly instances -> {output_path}")
+        print(f"[AnomalyEngine] Exported {len(self.anomaly_events)} events -> {output_path}")
 
+
+__all__ = ["EvacuationAnomalyEngine", "AnomalyEvent", "angular_deviation_deg"]

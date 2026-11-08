@@ -33,30 +33,29 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from _common import open_video, get_video_props, extract_track_ids, resolve_tracker, resolve_inference_imgsz
+from _common import (
+    open_video,
+    get_video_props,
+    extract_track_ids,
+    resolve_tracker,
+    resolve_inference_imgsz,
+    resolve_yolo_model_path,
+)
 from scripts.feature_extraction import TrajectoryFeatureExtractor
 from scripts.anomaly_detection import EvacuationAnomalyEngine
+from scripts import direction_estimation as _direction_estimation_mod
+from scripts.direction_estimation import (
+    CLASSIFIER_VERSION,
+    ADMIN_CARDINALS,
+    allowed_directions,
+    coerce_admin_direction,
+)
 
 HTTP_PORT = 8080
 WS_PORT = 8765
+RUNTIME_ID = f"AEGIS-{CLASSIFIER_VERSION}"
 
 CONNECTED_CLIENTS: Set[Any] = set()
-
-# Global streaming state
-STREAM_STATE = {
-    "is_streaming": False,
-    "is_paused": False,
-    "current_video": "assets/intrusion.mp4",
-    "expected_direction": "RIGHT",
-    "custom_zones": None,
-    "selected_track_id": None,
-    "thread": None,
-    "stop_event": threading.Event()
-}
-
-# Shared event loop for WebSocket broadcasting
-ASYNC_LOOP: Optional[asyncio.AbstractEventLoop] = None
-
 
 def load_yaml_config() -> Dict[str, Any]:
     cfg_path = PROJECT_ROOT / "configs" / "config.yaml"
@@ -68,6 +67,59 @@ def load_yaml_config() -> Dict[str, Any]:
 
 GLOBAL_CONFIG = load_yaml_config()
 
+# Initialize STREAM_STATE expected direction from config.yaml so it is consistent
+# from the very first frame — avoids the 1-frame mismatch when server starts.
+_cfg_expected_dir = GLOBAL_CONFIG.get("expected_evacuation_direction", "LEFT")
+try:
+    _cfg_expected_dir = coerce_admin_direction(_cfg_expected_dir)
+except Exception:
+    pass
+
+# Global streaming state — expected_direction seeded from config.yaml
+STREAM_STATE = {
+    "is_streaming": False,
+    "is_paused": False,
+    "current_video": "assets/intrusion.mp4",
+    "expected_direction": _cfg_expected_dir,
+    "direction_diagnostic_mode": False,
+    "playback_speed": 1.0,
+    "detection_profile": "balanced",
+    "custom_zones": None,
+    "selected_track_id": None,
+    "thread": None,
+    "stop_event": threading.Event()
+}
+
+DETECTION_PROFILES: Dict[str, Dict[str, Any]] = {
+    "performance": {
+        "name": "Performance",
+        "description": "High framerate priority, low false positives (640px, conf=0.22, iou=0.50)",
+        "conf": 0.22,
+        "imgsz": 640,
+        "iou": 0.50,
+        "tracker": "configs/bytetrack_crowd.yaml",
+    },
+    "balanced": {
+        "name": "Balanced",
+        "description": "Optimized precision-recall balance (800px, conf=0.15, iou=0.55)",
+        "conf": 0.15,
+        "imgsz": 800,
+        "iou": 0.55,
+        "tracker": "configs/bytetrack_crowd.yaml",
+    },
+    "accuracy": {
+        "name": "Accuracy",
+        "description": "High recall for dense crowds, small & occluded persons (960px, conf=0.10, iou=0.55)",
+        "conf": 0.10,
+        "imgsz": 960,
+        "iou": 0.55,
+        "tracker": "configs/bytetrack_crowd.yaml",
+    },
+}
+
+# Shared event loop for WebSocket broadcasting
+ASYNC_LOOP: Optional[asyncio.AbstractEventLoop] = None
+
 
 def get_available_videos() -> List[Dict[str, str]]:
     """Scan assets/ and assets/uploads/ for video files supported by OpenCV."""
@@ -78,7 +130,6 @@ def get_available_videos() -> List[Dict[str, str]]:
     preset_files = [
         ("intrusion.mp4", "Intrusion Detection Scenario (intrusion.mp4)"),
         ("running.mp4", "Evacuation Movement Scenario (running.mp4)"),
-        ("fall.mp4", "Pedestrian Fall Scenario (fall.mp4)"),
         ("evacuation_test_corridor.avi", "Evacuation Corridor Test (evacuation_test_corridor.avi)"),
     ]
 
@@ -164,48 +215,161 @@ class VideoStreamWorker:
 
         print(f"[Streamer] Starting live stream: {video_full_path.name} ({width}x{height}, {total_frames} frames, {fps:.1f} FPS)")
         print(f"[Streamer] Evacuation direction: {expected_dir}")
+        print(
+            f"[Streamer] RUNTIME_ID={RUNTIME_ID} pid={os.getpid()} "
+            f"server.py={Path(__file__).resolve()} "
+            f"direction_module={Path(_direction_estimation_mod.__file__).resolve()} "
+            f"classifier_version={CLASSIFIER_VERSION} "
+            f"allowed_for_expected={list(allowed_directions(expected_dir))}",
+            flush=True,
+        )
 
-        # Initialize detector & tracker
+        # Initialize detector & tracker (single pipeline — CrowdHuman YOLO11n by default)
         from ultralytics import YOLO
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = YOLO(GLOBAL_CONFIG.get("yolo_model", "yolov8n.pt"))
-        model.to(device)
-
         cfg_copy = dict(GLOBAL_CONFIG)
         cfg_copy["expected_evacuation_direction"] = expected_dir
         if custom_zones:
-            cfg_copy["zones"] = custom_zones
+            if isinstance(custom_zones, dict) and custom_zones.get("evacuation_corridor"):
+                cfg_copy["evacuation_corridor"] = custom_zones["evacuation_corridor"]
+                cfg_copy["zones"] = {}
+            elif isinstance(custom_zones, dict) and custom_zones.get("polygon"):
+                cfg_copy["evacuation_corridor"] = custom_zones
+                cfg_copy["zones"] = {}
+            else:
+                # Ignore obsolete multi-zone payloads
+                cfg_copy["zones"] = {}
+
+        model_path = resolve_yolo_model_path(cfg_copy, require_exists=True)
+        model = YOLO(model_path)
+        model.to(device)
 
         extractor = TrajectoryFeatureExtractor(cfg_copy)
         anomaly_engine = EvacuationAnomalyEngine(cfg_copy)
-        tracker_yaml = resolve_tracker(cfg_copy.get("tracker_config", "configs/bytetrack.yaml"))
-        conf_thresh = float(cfg_copy.get("detection_confidence", 0.08))
-        # Phase 26/33: session imgsz — production default 800; optional far_camera_profile → 960
-        # Resolved once per stream session (not per frame). No automatic scene classification.
-        inference_imgsz = resolve_inference_imgsz(cfg_copy)
+        anomaly_engine.set_expected_direction(expected_dir)
+
+        # Active detection profile settings
+        active_profile_key = STREAM_STATE.get("detection_profile", "balanced")
+        if active_profile_key not in DETECTION_PROFILES:
+            active_profile_key = "balanced"
+        prof_info = DETECTION_PROFILES[active_profile_key]
+        conf_thresh = float(prof_info["conf"])
+        inference_imgsz = int(prof_info["imgsz"])
+        nms_iou_thresh = float(prof_info.get("iou", 0.55))
+        tracker_yaml = resolve_tracker(prof_info.get("tracker", "configs/bytetrack_crowd.yaml"))
+
         far_prof = cfg_copy.get("far_camera_profile") or {}
-        person_classes = [0] if "pose" not in str(cfg_copy.get("yolo_model", "")) else None
+        person_class_id = int(cfg_copy.get("person_class_id", 0))
+        # Single-class CrowdHuman fine-tune and COCO person both use class 0; skip filter for pose models
+        person_classes = None if "pose" in str(cfg_copy.get("yolo_model", "")).lower() else [person_class_id]
         show_untracked = bool(cfg_copy.get("show_untracked_detections", False))
+        overlay_cfg = cfg_copy.get("overlay") or {}
 
         print(
-            f"[Streamer] Inference settings: model={cfg_copy.get('yolo_model', 'yolov8n.pt')} "
-            f"imgsz={inference_imgsz} conf={conf_thresh} classes={person_classes} "
+            f"[Streamer] Inference settings: model={model_path} profile={active_profile_key} "
+            f"imgsz={inference_imgsz} conf={conf_thresh} iou={nms_iou_thresh} classes={person_classes} "
             f"tracker={tracker_yaml} device={device} "
             f"far_camera_profile.enabled={bool(far_prof.get('enabled', False))}",
             flush=True
         )
 
-        frame_interval = 1.0 / max(fps, 10.0)
+        base_frame_interval = 1.0 / max(fps, 10.0)
         frame_idx = 0
         consecutive_empty_frames = 0
         # Rolling processing throughput (excludes pacing sleep)
         proc_latency_ema_ms = None
         proc_fps_ema = None
 
+        # Playback metrics and wall-clock synchronization
+        wall_sync_start = time.time()
+        video_sync_frame = 0
+        current_requested_speed = float(STREAM_STATE.get("playback_speed", 1.0))
+        last_synced_speed = current_requested_speed
+
+        playback_window_start = time.time()
+        window_start_frame_idx = 0
+        frames_skipped = 0
+        frames_processed = 0
+        frames_skipped_this_step = 0
+        achieved_playback_speed = current_requested_speed
+        effective_playback_fps = fps * current_requested_speed
+        monitoring_mode = "NORMAL"
+        current_max_skip = 4
+
         while not stop_event.is_set():
             if STREAM_STATE["is_paused"]:
-                time.sleep(0.1)
+                time.sleep(0.05)
+                # Keep wall-clock reference updated so pause duration does not cause a sudden forward jump upon resume
+                wall_sync_start = time.time()
+                video_sync_frame = frame_idx
+                playback_window_start = time.time()
+                window_start_frame_idx = frame_idx
                 continue
+
+            # Hot-reload playback speed if changed live by administrator
+            req_speed = float(STREAM_STATE.get("playback_speed", 1.0))
+            if abs(req_speed - last_synced_speed) > 1e-4:
+                wall_sync_start = time.time()
+                video_sync_frame = frame_idx
+                last_synced_speed = req_speed
+                playback_window_start = time.time()
+                window_start_frame_idx = frame_idx
+            current_requested_speed = req_speed
+
+            # Determine tracking-aware adaptive frame skipping limit based on scene state
+            adaptive_cfg = cfg_copy.get("adaptive_frame_skipping", {})
+            adaptive_enabled = bool(adaptive_cfg.get("enabled", True))
+
+            if not adaptive_enabled:
+                current_max_skip = max(1, int(round(current_requested_speed * 4)))
+            else:
+                max_skip_empty = int(adaptive_cfg.get("empty_scene_max_skip", 15))
+                max_skip_normal = int(adaptive_cfg.get("normal_flow_max_skip", 4))
+                max_skip_suspect = int(adaptive_cfg.get("suspect_anomaly_max_skip", 1))
+                max_skip_alert = int(adaptive_cfg.get("active_anomaly_max_skip", 2))
+                max_skip_stopped = int(adaptive_cfg.get("prolonged_stopping_max_skip", 3))
+
+                if monitoring_mode == "EMPTY":
+                    current_max_skip = min(max_skip_empty, max(1, int(round(current_requested_speed * 5))))
+                elif monitoring_mode == "SUSPECT":
+                    # Dense sampling for counterflow confirmation: maximum 1 frame skip (or 0 if speed <= 1.5x)
+                    current_max_skip = max_skip_suspect
+                    if current_requested_speed <= 1.5:
+                        current_max_skip = 0
+                elif monitoring_mode == "ALERT":
+                    # Confirmed wrong direction: preserve recovery and trail tracking
+                    current_max_skip = min(max_skip_alert, max(1, int(round(current_requested_speed * 1.0))))
+                elif monitoring_mode == "STOPPED":
+                    current_max_skip = min(max_skip_stopped, max(1, int(round(current_requested_speed * 1.5))))
+                else:  # NORMAL
+                    current_max_skip = min(max_skip_normal, max(1, int(round(current_requested_speed * 1.5))))
+
+            # Pacing & frame selection based on elapsed wall-clock time
+            now = time.time()
+            elapsed_wall = now - wall_sync_start
+            target_video_frame = video_sync_frame + int(round(elapsed_wall * current_requested_speed * fps))
+
+            frames_skipped_this_step = 0
+            # Case A: If target frame is <= frame_idx, we are ahead of wall-clock pacing (e.g. at 0.25x or 0.5x,
+            # or inference finished faster than target interval). Sleep smoothly until wall-clock reaches next frame.
+            if target_video_frame <= frame_idx:
+                next_frame = frame_idx + 1
+                target_wall_time = wall_sync_start + ((next_frame - video_sync_frame) / max(fps, 1.0)) / max(0.1, current_requested_speed)
+                sleep_sec = target_wall_time - time.time()
+                if sleep_sec > 0.001:
+                    time.sleep(min(0.25, sleep_sec))
+
+            # Case B: If target frame > frame_idx + 1, we are behind wall-clock pacing because inference latency
+            # is higher than the requested frame interval (e.g. at 1.5x, 2x, 3x, 5x, or CPU-bound 1x).
+            # Advance video using cap.grab() up to tracking-aware current_max_skip.
+            elif target_video_frame > frame_idx + 1:
+                skip_count = min(target_video_frame - (frame_idx + 1), current_max_skip)
+                for _ in range(skip_count):
+                    if not cap.grab():
+                        break
+                    frame_idx += 1
+                    frames_skipped += 1
+                    frames_skipped_this_step += 1
 
             t0 = time.time()
             ret, frame = cap.read()
@@ -213,6 +377,10 @@ class VideoStreamWorker:
                 # Loop video seamlessly and reset feature tracking state
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 frame_idx = 0
+                wall_sync_start = time.time()
+                video_sync_frame = 0
+                playback_window_start = time.time()
+                window_start_frame_idx = 0
                 extractor.reset()
                 anomaly_engine.reset()
                 try:
@@ -232,14 +400,47 @@ class VideoStreamWorker:
                     break
 
             frame_idx += 1
+            frames_processed += 1
 
-            # YOLOv8 + ByteTrack Inference for person class only (explicit imgsz)
+            # Hot-reload admin expected direction + diagnostic flag each frame
+            live_dir = STREAM_STATE.get("expected_direction") or expected_dir
+            if live_dir != expected_dir:
+                old_dir = expected_dir
+                expected_dir = live_dir
+                cfg_copy["expected_evacuation_direction"] = expected_dir
+                if hasattr(anomaly_engine, "set_expected_direction"):
+                    anomaly_engine.set_expected_direction(expected_dir)
+                print(
+                    f"[Streamer] EXPECTED_DIRECTION_CHANGED: OLD_DIRECTION={old_dir} "
+                    f"NEW_DIRECTION={expected_dir} "
+                    f"ACTIVE_CLASSIFIER_DIRECTION={anomaly_engine.classifier.expected} "
+                    f"ACTIVE_CONFIG_VALUE={cfg_copy.get('expected_evacuation_direction')} "
+                    f"allowed={list(allowed_directions(expected_dir))}",
+                    flush=True,
+                )
+
+            # Hot-reload detection profile if changed live
+            current_profile = STREAM_STATE.get("detection_profile", "balanced")
+            if current_profile in DETECTION_PROFILES:
+                p_cfg = DETECTION_PROFILES[current_profile]
+                conf_thresh = float(p_cfg["conf"])
+                inference_imgsz = int(p_cfg["imgsz"])
+                nms_iou_thresh = float(p_cfg.get("iou", 0.55))
+
+            # Diagnostics always useful; force on when a track is selected or admin enables mode
+            anomaly_engine.diagnostic_mode = bool(
+                STREAM_STATE.get("direction_diagnostic_mode", cfg_copy.get("direction_diagnostic_mode", False))
+                or STREAM_STATE.get("selected_track_id") is not None
+            )
+
+            # YOLO11n + ByteTrack Inference for person class only (explicit imgsz + iou)
             t_infer0 = time.time()
             results = model.track(
                 source=frame,
                 persist=True,
                 tracker=tracker_yaml,
                 conf=conf_thresh,
+                iou=nms_iou_thresh,
                 imgsz=inference_imgsz,
                 classes=person_classes,
                 device=device,
@@ -310,72 +511,100 @@ class VideoStreamWorker:
                             "speed": feat.get("speed_px_sec", 0.0),
                             "direction": feat.get("direction", "STATIONARY"),
                             "zone": feat.get("zone_type", "NORMAL_ZONE"),
-                            "confidence": feat.get("fall_confidence", 0.0),
-                            "event_id": feat.get("fall_event_id"),
-                            "tracking_state": feat.get("fall_tracking_state", "TRACKED"),
-                            "is_live_observation": feat.get("is_live_observation", True)
+                            "zone_id": feat.get("zone_id"),
+                            "zone_name": feat.get("zone_name"),
+                            "event_id": feat.get("event_id"),
+                            "evidence": feat.get("evidence", {}),
+                            "status": "ACTIVE",
+                            "is_live_observation": True,
                         })
                     current_pedestrians.append(feat)
 
-            # Post-frame fall persistence & spatial re-association for active falls
-            observed_tids = [p["track_id"] for p in current_pedestrians]
-            raw_candidates = []
-            if hasattr(anomaly_engine, "fall_detector") and anomaly_engine.fall_detector:
-                has_active_fall = any(s.get("status") in ("FALL_CONFIRMED", "FALL_SUSPECTED") for s in anomaly_engine.fall_detector.fall_state.values())
-                if has_active_fall:
-                    res_raw = model.predict(frame, conf=0.04, classes=[0], verbose=False)
-                    if res_raw and len(res_raw) > 0 and res_raw[0].boxes is not None and len(res_raw[0].boxes) > 0:
-                        raw_candidates = [list(c) for c in res_raw[0].boxes.xyxy.cpu().numpy()]
-
-            coasting_feats = anomaly_engine.process_frame_persistence(
-                frame_idx=frame_idx,
-                observed_track_ids=observed_tids,
-                raw_candidate_boxes=raw_candidates,
-                frame_img=frame,
-                frame_h=height,
-                frame_w=width,
-                fps=fps
-            )
-            for c_feat in coasting_feats:
-                current_pedestrians.append(c_feat)
-                if c_feat.get("anomaly"):
-                    active_alerts.append({
-                        "track_id": c_feat["track_id"],
-                        "type": c_feat["anomaly_type"],
-                        "severity": c_feat.get("severity", "CRITICAL"),
-                        "duration_sec": c_feat.get("duration_sec", 0.0),
-                        "timestamp": c_feat.get("timestamp", 0.0),
-                        "speed": 0.0,
-                        "direction": "STATIONARY",
-                        "zone": c_feat.get("zone_type", "NORMAL_ZONE"),
-                        "confidence": c_feat.get("fall_confidence", 0.60),
-                        "event_id": c_feat.get("fall_event_id"),
-                        "tracking_state": c_feat.get("fall_tracking_state", "LOST_COASTING"),
-                        "is_live_observation": c_feat.get("is_live_observation", False)
-                    })
-
             if len(current_pedestrians) == 0:
                 consecutive_empty_frames += 1
+                monitoring_mode = "EMPTY"
             else:
                 consecutive_empty_frames = 0
+                has_active_wrong_dir = any(
+                    p.get("visual_state") == "anomaly" and p.get("anomaly_type") == "WRONG_DIRECTION"
+                    for p in current_pedestrians
+                ) or any(a.get("type") == "WRONG_DIRECTION" for a in active_alerts)
+
+                if has_active_wrong_dir:
+                    monitoring_mode = "ALERT"
+                else:
+                    has_suspect_wrong_dir = False
+                    for p in current_pedestrians:
+                        tid = p.get("track_id")
+                        sust = anomaly_engine.wrong_dir_counters.get(tid, 0)
+                        cls_res = p.get("direction_classification")
+                        sec_dist = p.get("sector_distance")
+                        if sust > 0 or cls_res == "ANOMALY" or (sec_dist is not None and sec_dist >= 2):
+                            has_suspect_wrong_dir = True
+                            break
+                    if has_suspect_wrong_dir:
+                        monitoring_mode = "SUSPECT"
+                    elif any(
+                        p.get("anomaly_type") == "PROLONGED_STOPPING" or p.get("stopping_duration_sec", 0.0) >= 3.0
+                        for p in current_pedestrians
+                    ):
+                        monitoring_mode = "STOPPED"
+                    else:
+                        monitoring_mode = "NORMAL"
+
+            # Live runtime trace (every ~1s): up to 5 tracks with full classification chain
+            if frame_idx % max(1, int(fps)) == 0 and current_pedestrians:
+                for ped in current_pedestrians[:5]:
+                    dvec = ped.get("direction_vector") or [0, 0]
+                    traj = ped.get("trajectory") or []
+                    prev_foot = traj[-2][:2] if len(traj) >= 2 else None
+                    vs = ped.get("visual_state")
+                    colour = "RED" if vs == "anomaly" else ("BLUE" if vs in ("normal", "unknown") else str(vs))
+                    print(
+                        f"[LIVE_TRACE] TRACK_ID={ped.get('track_id')} "
+                        f"FOOTPOINT={ped.get('foot')} PREVIOUS_FOOTPOINT={prev_foot} "
+                        f"DX={dvec[0] if len(dvec) else None} DY={dvec[1] if len(dvec) > 1 else None} "
+                        f"ESTIMATED_DIRECTION={ped.get('direction')} "
+                        f"ESTIMATED_SECTOR={ped.get('direction')} "
+                        f"EXPECTED_DIRECTION={ped.get('expected_direction')} "
+                        f"CIRCULAR_SECTOR_DIFFERENCE={ped.get('sector_distance')} "
+                        f"CLASSIFIER_RESULT={ped.get('direction_classification')} "
+                        f"ANOMALY_ENGINE_RESULT={ped.get('anomaly_type')} "
+                        f"FINAL_VISUAL_STATE={vs} FINAL_DISPLAY_COLOUR={colour} "
+                        f"CLASSIFICATION_REASON={ped.get('direction_reason')} "
+                        f"RUNTIME_ID={RUNTIME_ID}",
+                        flush=True,
+                    )
 
             # Render annotations onto CCTV Frame
             annotated_frame = frame.copy()
 
-            # Draw Zones on video with subtle styling
-            zones_data = cfg_copy.get("zones", {})
-            for ztype, color in [("restricted_zones", (50, 50, 220)), ("evacuation_routes", (40, 180, 40)), ("safe_zones", (220, 180, 40)), ("exit_zones", (40, 230, 130))]:
-                for zinfo in zones_data.get(ztype, []):
-                    pts = np.array(zinfo.get("polygon", []), dtype=np.int32)
-                    if len(pts) >= 3:
-                        cv2.polylines(annotated_frame, [pts], isClosed=True, color=color, thickness=1, lineType=cv2.LINE_AA)
-                        overlay = annotated_frame.copy()
-                        cv2.fillPoly(overlay, [pts], color=color)
-                        cv2.addWeighted(overlay, 0.08, annotated_frame, 0.92, 0, annotated_frame)
-                        cv2.putText(annotated_frame, zinfo.get("name", ztype).upper(), (pts[0][0], max(18, pts[0][1] - 6)),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, color, 1, cv2.LINE_AA)
+            # Draw ONLY main evacuation corridor + flow line (subtle, no fill clutter)
+            corr = cfg_copy.get("evacuation_corridor") or {}
+            corr_color = tuple(int(c) for c in (overlay_cfg.get("color_corridor_bgr") or corr.get("color") or [40, 200, 80]))
+            if len(corr_color) != 3:
+                corr_color = (40, 200, 80)
+            poly = np.array(corr.get("polygon") or [], dtype=np.int32)
+            if len(poly) >= 3:
+                cv2.polylines(annotated_frame, [poly], isClosed=True, color=corr_color, thickness=1, lineType=cv2.LINE_AA)
+            flow = np.array(corr.get("flow_line") or [], dtype=np.int32)
+            if len(flow) >= 2:
+                for i in range(len(flow) - 1):
+                    cv2.arrowedLine(
+                        annotated_frame,
+                        tuple(flow[i]),
+                        tuple(flow[i + 1]),
+                        corr_color,
+                        2,
+                        tipLength=0.04,
+                        line_type=cv2.LINE_AA,
+                    )
 
-            # Anti-Collision Label Placement for Pedestrians
+            # Legend colours: blue=normal, red=confirmed anomaly, amber=selection outline
+            col_normal = tuple(int(c) for c in (overlay_cfg.get("color_normal_bgr") or [255, 160, 40]))
+            col_anomaly = tuple(int(c) for c in (overlay_cfg.get("color_anomaly_bgr") or [40, 40, 230]))
+            col_select = tuple(int(c) for c in (overlay_cfg.get("color_selection_bgr") or [0, 180, 255]))
+
             selected_tid = STREAM_STATE.get("selected_track_id", None)
             occupied_label_rects = []
             sorted_peds = sorted(current_pedestrians, key=lambda p: p["bbox"][1])
@@ -385,123 +614,127 @@ class VideoStreamWorker:
                 x1, y1, x2, y2 = [int(v) for v in ped["bbox"]]
                 bw = max(10, x2 - x1)
                 bh = max(10, y2 - y1)
-                is_anom = ped["anomaly"]
+                # Authoritative backend visual_state: anomaly→red; normal/unknown→blue
+                vs = ped.get("visual_state") or (
+                    "anomaly" if ped.get("anomaly") else "normal"
+                )
+                is_anom = vs == "anomaly" and ped.get("anomaly_type") in (
+                    "WRONG_DIRECTION", "PROLONGED_STOPPING"
+                )
                 anom_type = ped.get("anomaly_type", "")
                 is_selected = (selected_tid is not None and tid == selected_tid)
-                is_coasting = (ped.get("fall_tracking_state") == "LOST_COASTING" or not ped.get("is_live_observation", True))
 
-                # Clean restrained color palette:
-                # Cyan/Blue for normal, Red for critical/fall, Amber for warning/fall suspected, Bright cyan for selection
+                t_normal = int(overlay_cfg.get("box_thickness_normal", 1))
+                t_alert = int(overlay_cfg.get("box_thickness_alert", 2))
+                # UNKNOWN stays blue — never red without confirmed anomaly
+                box_color = col_anomaly if is_anom else col_normal
+                thickness = t_alert if is_anom else t_normal
+
+                cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), box_color, thickness)
+
+                # Amber selection outline (independent of anomaly colour)
                 if is_selected:
-                    box_color = (0, 220, 255)
-                    thickness = 2
-                elif is_coasting:
-                    box_color = (0, 140, 255)  # Coasting Amber-Orange
-                    thickness = 2
-                elif anom_type == "FALL_DETECTED":
-                    box_color = (50, 50, 235)  # Critical Red
-                    thickness = 2
-                elif anom_type == "FALL_SUSPECTED":
-                    box_color = (0, 165, 255)  # Warning Amber
-                    thickness = 2
-                elif is_anom:
-                    box_color = (50, 50, 235)  # Restrained Red
-                    thickness = 2
-                else:
-                    box_color = (235, 175, 50)  # Restrained Blue/Cyan
-                    thickness = 1
+                    pad = 3
+                    cv2.rectangle(
+                        annotated_frame,
+                        (x1 - pad, y1 - pad), (x2 + pad, y2 + pad),
+                        col_select, 2, cv2.LINE_AA,
+                    )
 
-                # Draw pedestrian bounding box (dashed if coasting)
-                if is_coasting:
-                    dash_len = 6
-                    for dx in range(x1, x2, dash_len * 2):
-                        cv2.line(annotated_frame, (dx, y1), (min(dx + dash_len, x2), y1), box_color, thickness)
-                        cv2.line(annotated_frame, (dx, y2), (min(dx + dash_len, x2), y2), box_color, thickness)
-                    for dy in range(y1, y2, dash_len * 2):
-                        cv2.line(annotated_frame, (x1, dy), (x1, min(dy + dash_len, y2)), box_color, thickness)
-                        cv2.line(annotated_frame, (x2, dy), (x2, min(dy + dash_len, y2)), box_color, thickness)
-                else:
-                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), box_color, thickness)
-
-                # If selected or fall detected, draw corner accent brackets
-                if is_selected or anom_type == "FALL_DETECTED":
-                    corner_col = (0, 240, 255) if is_selected else (50, 50, 235)
-                    c_len = min(12, bw // 3, bh // 3)
-                    cv2.line(annotated_frame, (x1 - 3, y1 - 3), (x1 - 3 + c_len, y1 - 3), corner_col, 2)
-                    cv2.line(annotated_frame, (x1 - 3, y1 - 3), (x1 - 3, y1 - 3 + c_len), corner_col, 2)
-                    cv2.line(annotated_frame, (x2 + 3, y2 + 3), (x2 + 3 - c_len, y2 + 3), corner_col, 2)
-                    cv2.line(annotated_frame, (x2 + 3, y2 + 3), (x2 + 3 - c_len, y2 + 3), corner_col, 2)
-
-                # Draw bottom foot position marker
                 foot_x, foot_y = (x1 + x2) // 2, y2
-                cv2.circle(annotated_frame, (foot_x, foot_y), 3, box_color, -1, cv2.LINE_AA)
+                foot_r = int(overlay_cfg.get("foot_marker_radius", 2))
+                cv2.circle(annotated_frame, (foot_x, foot_y), foot_r, box_color, -1, cv2.LINE_AA)
 
-                # Clean, compact label
-                if is_coasting:
-                    lbl = f"#{tid} - FALLEN (COASTING)"
-                elif is_anom:
-                    anom_map = {
-                        "FALL_DETECTED": "FALL DETECTED",
-                        "FALL_SUSPECTED": "FALL SUSPECTED",
-                        "PROLONGED_STOPPING": "STOPPING",
-                        "WRONG_DIRECTION": "WRONG DIR",
-                        "RESTRICTED_ZONE_ENTRY": "RESTRICTED"
-                    }
-                    status_str = anom_map.get(ped.get("anomaly_type", ""), "ALERT")
-                    lbl = f"#{tid} - {status_str}"
+                show_arrows = bool(overlay_cfg.get("show_direction_arrows", True))
+                pdir = ped.get("direction", "STATIONARY")
+                dvec = ped.get("direction_vector") or [0, 0]
+                reliable = bool(ped.get("direction_reliable", pdir not in ("STATIONARY", "UNKNOWN")))
+                if show_arrows and (is_selected or is_anom) and reliable:
+                    dx, dy = float(dvec[0]), float(dvec[1])
+                    mag = float(np.hypot(dx, dy)) or 1.0
+                    scale = 36.0 / mag
+                    tip = (int(foot_x + dx * scale), int(foot_y + dy * scale))
+                    cv2.arrowedLine(annotated_frame, (foot_x, foot_y), tip, box_color, 2, tipLength=0.35)
+
+                # Selected-track movement HUD: compare visible trail vs estimated arrow
+                if is_selected:
+                    hud = (
+                        f"est={pdir} exp={ped.get('expected_direction')} "
+                        f"dSec={ped.get('sector_distance')} "
+                        f"{ped.get('direction_classification')} "
+                        f"sust={(ped.get('direction_diagnostics') or {}).get('sustain_frames', 0)} "
+                        f"vs={vs}"
+                    )
+                    cv2.putText(
+                        annotated_frame, hud, (max(8, x1), min(height - 8, y2 + 16)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 255), 1, cv2.LINE_AA,
+                    )
+
+                show_labels = bool(overlay_cfg.get("show_track_labels", True))
+                compact = bool(overlay_cfg.get("compact_labels", True))
+                show_dir = bool(overlay_cfg.get("show_direction_in_label", False))
+                font_scale = float(overlay_cfg.get("label_font_scale", 0.32))
+
+                if is_anom:
+                    anom_map = {"PROLONGED_STOPPING": "STOP", "WRONG_DIRECTION": "DIR"}
+                    lbl = f"#{tid} {anom_map.get(anom_type, 'ALERT')}"
+                elif is_selected and reliable:
+                    lbl = f"#{tid} {pdir}"
                 else:
-                    pdir = ped.get("direction", "STATIONARY")
-                    lbl = f"#{tid} - {pdir}" if pdir != "STATIONARY" else f"#{tid}"
+                    if compact and not show_dir:
+                        lbl = f"#{tid}"
+                    else:
+                        lbl = f"#{tid} {pdir}" if show_dir and reliable else f"#{tid}"
 
-                (tw, th), _ = cv2.getTextSize(lbl, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
-                lw = tw + 8
-                lh = th + 6
+                draw_label = show_labels or is_anom or is_selected
+                if draw_label:
+                    (tw, th), _ = cv2.getTextSize(lbl, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
+                    lw = tw + 8
+                    lh = th + 6
 
-                # Candidate slots: (lx1, ly1, lx2, ly2, tx, ty, leader_target)
-                candidates = [
-                    (x1, y1 - lh, x1 + lw, y1, x1 + 4, y1 - 4, None),
-                    (x2 - lw, y1 - lh, x2, y1, x2 - lw + 4, y1 - 4, None),
-                    (x1, y2, x1 + lw, y2 + lh, x1 + 4, y2 + lh - 4, None),
-                    (x1, y1 - lh - 12, x1 + lw, y1 - 12, x1 + 4, y1 - 16, (x1 + bw // 2, y1)),
-                    (x1, y1 - (lh * 2) - 16, x1 + lw, y1 - lh - 16, x1 + 4, y1 - lh - 20, (x1 + bw // 2, y1)),
-                    (x2 + 6, y1, x2 + 6 + lw, y1 + lh, x2 + 10, y1 + lh - 4, (x2, y1 + bh // 4)),
-                ]
+                    # Candidate slots: (lx1, ly1, lx2, ly2, tx, ty, leader_target)
+                    candidates = [
+                        (x1, y1 - lh, x1 + lw, y1, x1 + 4, y1 - 4, None),
+                        (x2 - lw, y1 - lh, x2, y1, x2 - lw + 4, y1 - 4, None),
+                        (x1, y2, x1 + lw, y2 + lh, x1 + 4, y2 + lh - 4, None),
+                        (x1, y1 - lh - 12, x1 + lw, y1 - 12, x1 + 4, y1 - 16, (x1 + bw // 2, y1)),
+                        (x1, y1 - (lh * 2) - 16, x1 + lw, y1 - lh - 16, x1 + 4, y1 - lh - 20, (x1 + bw // 2, y1)),
+                        (x2 + 6, y1, x2 + 6 + lw, y1 + lh, x2 + 10, y1 + lh - 4, (x2, y1 + bh // 4)),
+                    ]
 
-                chosen = None
-                for cx1, cy1, cx2, cy2, tx, ty, leader in candidates:
-                    if cx1 < 4:
-                        diff = 4 - cx1
-                        cx1 += diff; cx2 += diff; tx += diff
-                    if cx2 > width - 4:
-                        diff = cx2 - (width - 4)
-                        cx1 -= diff; cx2 -= diff; tx -= diff
-                    if cy1 < 36:
-                        continue
+                    chosen = None
+                    for cx1, cy1, cx2, cy2, tx, ty, leader in candidates:
+                        if cx1 < 4:
+                            diff = 4 - cx1
+                            cx1 += diff; cx2 += diff; tx += diff
+                        if cx2 > width - 4:
+                            diff = cx2 - (width - 4)
+                            cx1 -= diff; cx2 -= diff; tx -= diff
+                        if cy1 < 36:
+                            continue
 
-                    collision = False
-                    for ox1, oy1, ox2, oy2 in occupied_label_rects:
-                        if not (cx2 < ox1 or cx1 > ox2 or cy2 < oy1 or cy1 > oy2):
-                            collision = True
+                        collision = False
+                        for ox1, oy1, ox2, oy2 in occupied_label_rects:
+                            if not (cx2 < ox1 or cx1 > ox2 or cy2 < oy1 or cy1 > oy2):
+                                collision = True
+                                break
+
+                        if not collision:
+                            chosen = (cx1, cy1, cx2, cy2, tx, ty, leader)
                             break
 
-                    if not collision:
-                        chosen = (cx1, cy1, cx2, cy2, tx, ty, leader)
-                        break
+                    if chosen is None:
+                        chosen = (x1, max(28, y1 - lh), x1 + lw, max(28 + lh, y1), x1 + 4, max(28 + lh - 3, y1 - 3), None)
 
-                if chosen is None:
-                    chosen = (x1, max(28, y1 - lh), x1 + lw, max(28 + lh, y1), x1 + 4, max(28 + lh - 3, y1 - 3), None)
+                    lx1, ly1, lx2, ly2, tx, ty, leader = chosen
+                    occupied_label_rects.append((lx1, ly1, lx2, ly2))
 
-                lx1, ly1, lx2, ly2, tx, ty, leader = chosen
-                occupied_label_rects.append((lx1, ly1, lx2, ly2))
+                    if leader is not None:
+                        cv2.line(annotated_frame, (lx1 + lw // 2, ly2), leader, box_color, 1, cv2.LINE_AA)
 
-                # Draw leader line if staggered
-                if leader is not None:
-                    cv2.line(annotated_frame, (lx1 + lw // 2, ly2), leader, box_color, 1, cv2.LINE_AA)
-
-                # Draw dark label badge with refined border
-                cv2.rectangle(annotated_frame, (lx1, ly1), (lx2, ly2), (12, 18, 30), -1)
-                cv2.rectangle(annotated_frame, (lx1, ly1), (lx2, ly2), box_color, 1)
-                cv2.putText(annotated_frame, lbl, (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (240, 245, 255), 1, cv2.LINE_AA)
+                    cv2.rectangle(annotated_frame, (lx1, ly1), (lx2, ly2), (12, 18, 30), -1)
+                    cv2.rectangle(annotated_frame, (lx1, ly1), (lx2, ly2), box_color, 1)
+                    cv2.putText(annotated_frame, lbl, (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (240, 245, 255), 1, cv2.LINE_AA)
 
                 # Subtle recent trajectory trail (max 18 points)
                 traj = ped.get("trajectory", [])
@@ -543,7 +776,7 @@ class VideoStreamWorker:
                 cv2.putText(annotated_frame, "UNTRACKED", (ux1, max(14, uy1 - 4)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.32, ucol, 1, cv2.LINE_AA)
 
-            # Processing latency / FPS (pipeline wall time, excludes pacing sleep)
+            # Rolling processing throughput (excludes pacing sleep)
             pipeline_ms = (time.time() - t0) * 1000.0
             if proc_latency_ema_ms is None:
                 proc_latency_ema_ms = pipeline_ms
@@ -555,13 +788,32 @@ class VideoStreamWorker:
             else:
                 proc_fps_ema = 0.85 * proc_fps_ema + 0.15 * instant_proc_fps
 
+            # Actual achieved playback speed calculation
+            # Measured from actual video frames elapsed divided by wall-clock time
+            current_requested_speed = float(STREAM_STATE.get("playback_speed", 1.0))
+            wall_elapsed = time.time() - playback_window_start
+            if wall_elapsed >= 0.5:
+                delta_video_frames = frame_idx - window_start_frame_idx
+                # Effective playback FPS achieved over window (video frames elapsed per wall second)
+                effective_playback_fps = delta_video_frames / max(1e-3, wall_elapsed)
+                # Achieved speed multiplier vs source video FPS
+                achieved_playback_speed = round(effective_playback_fps / max(1.0, fps), 2)
+                # Cap achieved speed display to requested speed to prevent measurement jitter
+                if achieved_playback_speed > current_requested_speed * 1.05:
+                    achieved_playback_speed = current_requested_speed
+                # Reset window
+                playback_window_start = time.time()
+                window_start_frame_idx = frame_idx
+
             # Compact, clean top status pill on CCTV
             cv2.rectangle(annotated_frame, (0, 0), (width, 24), (10, 15, 26), -1)
             cv2.line(annotated_frame, (0, 24), (width, 24), (30, 42, 60), 1)
+            proc_val = f"{proc_fps_ema:.1f}" if proc_fps_ema is not None else "--"
             header_txt = (
-                f"{video_full_path.name} · Frame {frame_idx}/{total_frames} · Flow: {expected_dir} · "
-                f"Tracks: {len(current_pedestrians)} · imgsz={inference_imgsz} · "
-                f"{proc_fps_ema:.1f} procFPS · {proc_latency_ema_ms:.0f}ms"
+                f"{video_full_path.name} · F{frame_idx}/{total_frames} · Flow:{expected_dir} · "
+                f"Peds:{len(current_pedestrians)} · Mode:{monitoring_mode} · "
+                f"Req:{current_requested_speed}x · Act:{achieved_playback_speed:.2f}x ({effective_playback_fps:.1f} FPS) · "
+                f"Proc:{proc_val} FPS · Skp:{frames_skipped}"
             )
             cv2.putText(annotated_frame, header_txt, (10, 16), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (200, 215, 235), 1, cv2.LINE_AA)
 
@@ -575,15 +827,31 @@ class VideoStreamWorker:
             # Broadcast frame state & Digital Twin data
             broadcast_payload({
                 "type": "frame_update",
+                "runtime_id": RUNTIME_ID,
+                "classifier_version": CLASSIFIER_VERSION,
                 "frame": frame_idx,
                 "total_frames": total_frames,
                 "timestamp": round(frame_idx / fps, 2),
                 "fps": round(fps, 1),  # source video FPS (nominal)
-                "processing_fps": round(float(proc_fps_ema), 2),
-                "latency_ms": round(float(proc_latency_ema_ms), 1),
+                "processing_fps": round(float(proc_fps_ema), 2) if proc_fps_ema is not None else 0.0,
+                "latency_ms": round(float(proc_latency_ema_ms), 1) if proc_latency_ema_ms is not None else 0.0,
                 "infer_ms": round(float(infer_ms), 1),
                 "inference_imgsz": inference_imgsz,
                 "detection_confidence": conf_thresh,
+                "detection_profile": current_profile,
+                "playback_speed": current_requested_speed,
+                "requested_playback_speed": current_requested_speed,
+                "achieved_playback_speed": achieved_playback_speed,
+                "effective_playback_fps": round(float(effective_playback_fps), 1),
+                "frames_processed": frames_processed,
+                "frames_skipped": frames_skipped,
+                "monitoring_mode": monitoring_mode,
+                "adaptive_policy": {
+                    "enabled": adaptive_enabled,
+                    "mode": monitoring_mode,
+                    "max_skip_allowed": current_max_skip,
+                    "skipped_this_step": frames_skipped_this_step,
+                },
                 "raw_detection_count": raw_det_count if show_untracked else None,
                 "tracked_count": len(current_pedestrians),
                 "untracked_count": len(untracked_boxes) if show_untracked else None,
@@ -594,15 +862,20 @@ class VideoStreamWorker:
                 "pedestrians": current_pedestrians,
                 "active_alerts": active_alerts,
                 "expected_direction": expected_dir,
-                "zones": cfg_copy.get("zones", {}),
+                "evacuation_corridor": cfg_copy.get("evacuation_corridor") or {},
+                "zones": {},
+                "legend": {
+                    "normal": "blue",
+                    "anomaly": "red",
+                    "selected": "amber",
+                    "corridor": "green",
+                },
                 "has_pedestrians": len(current_pedestrians) > 0,
                 "empty_warning": consecutive_empty_frames > 45
             })
 
-            # Control streaming speed
-            elapsed = time.time() - t0
-            sleep_time = max(0.005, frame_interval - elapsed)
-            time.sleep(sleep_time)
+            # Yield thread briefly to prevent CPU spinning between iterations
+            time.sleep(0.001)
 
         cap.release()
         STREAM_STATE["is_streaming"] = False
@@ -625,6 +898,7 @@ def stop_streaming():
 def start_streaming(video_path: str, direction: str = "RIGHT", zones: Optional[Dict] = None):
     """Starts or switches the active video stream."""
     stop_streaming()
+    direction = coerce_admin_direction(direction)
 
     # Create a fresh stop event specifically for this new worker thread
     worker_stop_event = threading.Event()
@@ -902,14 +1176,45 @@ class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             zones = data.get("zones", None)
             direction = data.get("direction", None)
+            camera_id = str(data.get("camera_id") or Path(STREAM_STATE.get("current_video") or "default").stem)
 
-            if zones:
-                STREAM_STATE["custom_zones"] = zones
+            corridor = data.get("evacuation_corridor") or zones
+            if corridor:
+                # Accept corridor object or wrap polygon under evacuation_corridor
+                if isinstance(corridor, dict) and (
+                    "polygon" in corridor or "flow_line" in corridor or "expected_direction" in corridor
+                ):
+                    corr_obj = corridor
+                elif isinstance(corridor, dict) and corridor.get("evacuation_corridor"):
+                    corr_obj = corridor["evacuation_corridor"]
+                    if isinstance(corr_obj, list):
+                        corr_obj = corr_obj[0] if corr_obj else {}
+                else:
+                    corr_obj = None
+
+                try:
+                    from scripts.feature_extraction import EvacuationCorridor
+                    check_cfg = {"evacuation_corridor": corr_obj} if corr_obj else {"zones": zones or {}}
+                    ok, msg = EvacuationCorridor.validate_config(check_cfg)
+                except Exception as e:
+                    ok, msg = False, str(e)
+                if not ok:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "error", "message": msg}).encode("utf-8"))
+                    return
+
+                STREAM_STATE["custom_zones"] = {"evacuation_corridor": corr_obj} if corr_obj else {}
                 cfg_path = PROJECT_ROOT / "configs" / "config.yaml"
                 try:
                     with open(cfg_path, "r", encoding="utf-8") as f:
                         cur_cfg = yaml.safe_load(f) or {}
-                    cur_cfg["zones"] = zones
+                    if corr_obj:
+                        cur_cfg["evacuation_corridor"] = corr_obj
+                        if corr_obj.get("expected_direction"):
+                            cur_cfg["expected_evacuation_direction"] = corr_obj["expected_direction"]
+                    cur_cfg["zones"] = {}
                     if direction:
                         cur_cfg["expected_evacuation_direction"] = direction
                     if data.get("speed_threshold") is not None:
@@ -918,6 +1223,11 @@ class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         cur_cfg["prolonged_stopping_frames"] = int(data["stopping_frames"])
                     with open(cfg_path, "w", encoding="utf-8") as f:
                         yaml.dump(cur_cfg, f, default_flow_style=False, sort_keys=False)
+                    cam_dir = PROJECT_ROOT / "configs" / "zones"
+                    cam_dir.mkdir(parents=True, exist_ok=True)
+                    safe_cam = "".join(c if c.isalnum() or c in "-_" else "_" for c in camera_id)
+                    with open(cam_dir / f"{safe_cam}.json", "w", encoding="utf-8") as f:
+                        json.dump({"camera_id": camera_id, "evacuation_corridor": corr_obj}, f, indent=2)
                     global GLOBAL_CONFIG
                     GLOBAL_CONFIG = cur_cfg
                 except Exception as e:
@@ -932,7 +1242,11 @@ class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"status": "ok", "message": "Zones updated and live pipeline reconfigured."}).encode("utf-8"))
+            self.wfile.write(json.dumps({
+                "status": "ok",
+                "message": "Zones updated and live pipeline reconfigured.",
+                "camera_id": camera_id,
+            }).encode("utf-8"))
             return
 
         self.send_response(404)
@@ -950,7 +1264,13 @@ async def register_client(websocket):
         "videos": get_available_videos(),
         "current_video": STREAM_STATE["current_video"],
         "expected_direction": STREAM_STATE["expected_direction"],
-        "is_streaming": STREAM_STATE["is_streaming"]
+        "is_streaming": STREAM_STATE["is_streaming"],
+        "playback_speed": STREAM_STATE.get("playback_speed", 1.0),
+        "detection_profile": STREAM_STATE.get("detection_profile", "balanced"),
+        "detection_profiles": {
+            k: {"name": v["name"], "description": v["description"], "conf": v["conf"], "imgsz": v["imgsz"]}
+            for k, v in DETECTION_PROFILES.items()
+        }
     })
     await websocket.send(init_msg)
 
@@ -966,18 +1286,74 @@ async def register_client(websocket):
                     vpath = cmd.get("video_path", "assets/intrusion.mp4")
                     vdir = cmd.get("direction", "RIGHT")
                     vzones = cmd.get("zones", None)
+                    if "speed" in cmd:
+                        try:
+                            STREAM_STATE["playback_speed"] = max(0.1, min(5.0, float(cmd["speed"])))
+                        except Exception:
+                            pass
+                    if "profile" in cmd and cmd["profile"] in DETECTION_PROFILES:
+                        STREAM_STATE["detection_profile"] = cmd["profile"]
                     start_streaming(vpath, vdir, vzones)
                 elif action == "stop_stream":
                     stop_streaming()
                 elif action == "toggle_pause":
                     STREAM_STATE["is_paused"] = not STREAM_STATE["is_paused"]
+                elif action == "set_speed":
+                    # Dynamic playback speed control: 0.25x, 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x, 3x, or custom
+                    try:
+                        speed_val = max(0.1, min(5.0, float(cmd.get("speed", 1.0))))
+                        STREAM_STATE["playback_speed"] = speed_val
+                        broadcast_payload({
+                            "type": "speed_updated",
+                            "playback_speed": speed_val
+                        })
+                        print(f"[WebSocket] Playback speed updated -> {speed_val}x", flush=True)
+                    except Exception as e:
+                        print(f"[WebSocket] Invalid speed value: {e}", flush=True)
+                elif action == "set_detection_profile":
+                    # Dynamic detection profile: performance, balanced, accuracy
+                    prof = str(cmd.get("profile", "balanced")).lower()
+                    if prof in DETECTION_PROFILES:
+                        STREAM_STATE["detection_profile"] = prof
+                        p_info = DETECTION_PROFILES[prof]
+                        broadcast_payload({
+                            "type": "profile_updated",
+                            "detection_profile": prof,
+                            "profile_info": p_info
+                        })
+                        print(f"[WebSocket] Detection profile updated -> {prof} (conf={p_info['conf']}, imgsz={p_info['imgsz']})", flush=True)
+                elif action in ("set_direction", "update_direction"):
+                    # Live cardinal expected-direction — no restart; persist for restarts
+                    raw = str(cmd.get("direction") or STREAM_STATE["expected_direction"]).upper()
+                    vdir = coerce_admin_direction(raw)
+                    STREAM_STATE["expected_direction"] = vdir
+                    try:
+                        cfg_path = PROJECT_ROOT / "configs" / "config.yaml"
+                        if cfg_path.exists():
+                            with open(cfg_path, "r", encoding="utf-8") as f:
+                                cur_cfg = yaml.safe_load(f) or {}
+                            cur_cfg["expected_evacuation_direction"] = vdir
+                            with open(cfg_path, "w", encoding="utf-8") as f:
+                                yaml.safe_dump(cur_cfg, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+                    except Exception as e:
+                        print(f"[Config] Failed to persist expected direction: {e}", flush=True)
+                    broadcast_payload({
+                        "type": "direction_updated",
+                        "expected_direction": vdir,
+                        "admin_cardinals": list(ADMIN_CARDINALS),
+                    })
+                    print(f"[WebSocket] Expected direction set → {vdir} (raw={raw})", flush=True)
                 elif action == "update_zones":
                     vzones = cmd.get("zones", None)
                     vdir = cmd.get("direction", STREAM_STATE["expected_direction"])
+                    if vdir:
+                        STREAM_STATE["expected_direction"] = str(vdir).upper()
                     if STREAM_STATE["is_streaming"]:
-                        start_streaming(STREAM_STATE["current_video"], vdir, vzones)
+                        start_streaming(STREAM_STATE["current_video"], STREAM_STATE["expected_direction"], vzones)
                 elif action == "select_track":
                     STREAM_STATE["selected_track_id"] = cmd.get("track_id", None)
+                elif action == "set_diagnostic":
+                    STREAM_STATE["direction_diagnostic_mode"] = bool(cmd.get("enabled", False))
             except Exception as e:
                 print(f"[WebSocket] Error handling command: {e}", flush=True)
     finally:
@@ -1011,6 +1387,32 @@ async def start_ws_server():
 
 
 def main():
+    # Startup check: fail fast if configured detector weights are missing
+    try:
+        model_path = resolve_yolo_model_path(GLOBAL_CONFIG, require_exists=True)
+        print(f"[Startup] Detector weights OK: {model_path}", flush=True)
+        print(
+            f"[Startup] Tracker: {GLOBAL_CONFIG.get('tracker_config', 'configs/bytetrack_crowd.yaml')} | "
+            f"imgsz={resolve_inference_imgsz(GLOBAL_CONFIG)} | "
+            f"conf={GLOBAL_CONFIG.get('detection_confidence', 0.08)}",
+            flush=True,
+        )
+        exp = GLOBAL_CONFIG.get("expected_evacuation_direction", STREAM_STATE.get("expected_direction"))
+        print(
+            f"[Startup] RUNTIME_ID={RUNTIME_ID} pid={os.getpid()}\n"
+            f"[Startup] server.py={Path(__file__).resolve()}\n"
+            f"[Startup] direction_module={Path(_direction_estimation_mod.__file__).resolve()}\n"
+            f"[Startup] classifier_version={CLASSIFIER_VERSION}\n"
+            f"[Startup] expected_direction={exp} "
+            f"allowed={list(allowed_directions(str(exp)))} "
+            f"max_sector_distance_normal="
+            f"{(GLOBAL_CONFIG.get('direction_detection') or {}).get('max_sector_distance_normal', 1)}",
+            flush=True,
+        )
+    except FileNotFoundError as e:
+        print(f"[Startup] FATAL: {e}", flush=True)
+        raise SystemExit(1) from e
+
     http_thread = threading.Thread(target=start_http_server, daemon=True)
     http_thread.start()
 

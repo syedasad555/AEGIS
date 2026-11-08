@@ -68,6 +68,54 @@ def create_video_writer(output_path: Union[str, Path],
 
 
 # ------------------------------------------------------------------
+#  Detector weights resolution
+# ------------------------------------------------------------------
+DEFAULT_YOLO_MODEL = "weights/aegis_yolo11n_crowdhuman.pt"
+ROLLBACK_YOLO_MODEL = "yolov8n.pt"
+
+
+def resolve_yolo_model_path(
+    config: Optional[Dict[str, Any]] = None,
+    *,
+    project_root: Optional[Path] = None,
+    require_exists: bool = True,
+) -> str:
+    """Resolve detector weights path from config (absolute string).
+
+    Default production model is the CrowdHuman fine-tune under ``weights/``.
+    Raises ``FileNotFoundError`` with a clear message when weights are missing
+    and ``require_exists`` is True.
+    """
+    root = Path(project_root) if project_root is not None else PROJECT_ROOT
+    cfg = config or {}
+    raw = str(cfg.get("yolo_model", DEFAULT_YOLO_MODEL) or DEFAULT_YOLO_MODEL).strip()
+    candidates = []
+    p = Path(raw)
+    if p.is_absolute():
+        candidates.append(p)
+    else:
+        candidates.append(root / p)
+        candidates.append(root / "weights" / p.name)
+        candidates.append(root / p.name)
+
+    for cand in candidates:
+        if cand.exists() and cand.is_file():
+            return str(cand.resolve())
+
+    if not require_exists:
+        return str((root / raw).resolve()) if not p.is_absolute() else str(p)
+
+    tried = "\n  - ".join(str(c) for c in candidates)
+    raise FileNotFoundError(
+        "AEGIS detector weights not found.\n"
+        f"  Config yolo_model: {raw}\n"
+        f"  Looked in:\n  - {tried}\n"
+        f"Place the fine-tuned weights at '{DEFAULT_YOLO_MODEL}' "
+        f"or set yolo_model to an existing file (rollback: '{ROLLBACK_YOLO_MODEL}')."
+    )
+
+
+# ------------------------------------------------------------------
 #  Session inference resolution (Phase 33)
 # ------------------------------------------------------------------
 def resolve_inference_imgsz(config: Optional[Dict[str, Any]] = None) -> int:

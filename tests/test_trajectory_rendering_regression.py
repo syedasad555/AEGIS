@@ -34,7 +34,7 @@ class TestTrajectoryRenderingRegression(unittest.TestCase):
         """Set up standard configuration for tests."""
         self.config = {
             "fps": 30.0,
-            "expected_evacuation_direction": "RIGHT",
+            "expected_evacuation_direction": "EAST",
             "stationary_speed_threshold": 0.6,
             "prolonged_stopping_frames": 30,
             "direction_window_frames": 10,
@@ -42,10 +42,19 @@ class TestTrajectoryRenderingRegression(unittest.TestCase):
             "trajectory_max_displacement_px": 65.0,
             "trajectory_max_frame_gap": 10,
             "trajectory_min_history_for_direction": 8,
-            "zones": {
-                "restricted_zones": [],
-                "evacuation_routes": []
-            }
+            "direction_detection": {
+                "angular_tolerance_deg": 30.0,
+                "wrong_way_sustain_frames": 1,
+                "recovery_frames": 2,
+                "cooldown_sec": 0.0,
+                "require_in_corridor": False,
+            },
+            "stopping_detection": {"enabled": False},
+            "evacuation_corridor": {
+                "id": "corridor_main",
+                "polygon": [[0, 0], [2000, 0], [2000, 1000], [0, 1000]],
+            },
+            "zones": {},
         }
         self.extractor = TrajectoryFeatureExtractor(self.config)
         self.anomaly_engine = EvacuationAnomalyEngine(self.config)
@@ -234,6 +243,7 @@ class TestTrajectoryRenderingRegression(unittest.TestCase):
         eval_res_8 = self.anomaly_engine.evaluate_pedestrian(feat_8)
         self.assertEqual(eval_res_8["anomaly_type"], "WRONG_DIRECTION")
         self.assertEqual(eval_res_8["severity"], "WARNING")
+        self.assertEqual(eval_res_8["visual_state"], "anomaly")
 
 
 if __name__ == "__main__":

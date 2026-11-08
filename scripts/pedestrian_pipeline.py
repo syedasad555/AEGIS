@@ -83,23 +83,26 @@ class PedestrianPipeline:
         else:
             self.device = dev_cfg
         
-        # Load YOLO model
-        model_name = config.get("yolo_model", "yolov8n.pt")
-        print(f"[Pipeline] Loading YOLOv8 model: {model_name} on device: {self.device}")
-        self.model = YOLO(model_name)
+        # Load person detector (configurable; default CrowdHuman YOLO11n fine-tune)
+        try:
+            from _common import resolve_yolo_model_path, resolve_inference_imgsz
+            model_path = resolve_yolo_model_path(config, require_exists=True)
+            self.inference_imgsz = resolve_inference_imgsz(config)
+        except FileNotFoundError:
+            raise
+        except Exception:
+            model_path = str(config.get("yolo_model", "weights/aegis_yolo11n_crowdhuman.pt"))
+            self.inference_imgsz = int(config.get("inference_imgsz", 800))
+        print(f"[Pipeline] Loading detector: {model_path} on device: {self.device}")
+        self.model = YOLO(model_path)
         self.model.to(self.device)
 
-        # Tracker setup
-        tracker_cfg = config.get("tracker_config", "configs/bytetrack.yaml")
+        # Tracker setup — reuse project crowd/fall YAML via resolve_tracker (no silent default swap)
+        tracker_cfg = config.get("tracker_config", "configs/bytetrack_crowd.yaml")
         self.tracker_yaml = resolve_tracker(tracker_cfg)
         self.conf_thresh = config.get("detection_confidence", 0.08)
-        # Phase 33: session-fixed imgsz (optional far_camera_profile override)
-        try:
-            from _common import resolve_inference_imgsz
-            self.inference_imgsz = resolve_inference_imgsz(config)
-        except Exception:
-            self.inference_imgsz = int(config.get("inference_imgsz", 800))
         self.person_class = config.get("person_class_id", 0)
+        self.overlay_cfg = config.get("overlay") or {}
 
         # Selective Tiled Inference setup (Phase 21)
         tiled_cfg = config.get("tiled_inference", {})
@@ -205,7 +208,7 @@ class PedestrianPipeline:
                     tracker=self.tracker_yaml,
                     conf=self.conf_thresh,
                     imgsz=self.inference_imgsz,
-                    classes=[self.person_class] if "pose" not in str(self.config.get("yolo_model", "")) else None,
+                    classes=None if "pose" in str(self.config.get("yolo_model", "")).lower() else [self.person_class],
                     device=self.device,
                     verbose=False
                 )
@@ -231,7 +234,7 @@ class PedestrianPipeline:
                         fps=fps
                     )
 
-                    # Evaluate context-aware anomaly rules with fall detection
+                    # Evaluate context-aware anomaly rules (restricted / wrong-way / stop)
                     feat = self.anomaly_engine.evaluate_pedestrian(
                         feat,
                         frame_img=frame,
@@ -244,31 +247,6 @@ class PedestrianPipeline:
                         frame_anomalies.append(feat)
 
                     current_pedestrians_state.append(feat)
-
-            # Post-frame persistence for active falls temporarily lost by ByteTrack
-            raw_candidates = []
-            if hasattr(self.anomaly_engine, "fall_detector") and self.anomaly_engine.fall_detector:
-                has_active_fall = any(s.get("status") in ("FALL_CONFIRMED", "FALL_SUSPECTED") for s in self.anomaly_engine.fall_detector.fall_state.values())
-                if has_active_fall:
-                    res_raw = self.model.predict(frame, conf=0.04, classes=[self.person_class], verbose=False)
-                    if res_raw and len(res_raw) > 0 and res_raw[0].boxes is not None and len(res_raw[0].boxes) > 0:
-                        raw_candidates = [list(c) for c in res_raw[0].boxes.xyxy.cpu().numpy()]
-
-            observed_tids = [p["track_id"] for p in current_pedestrians_state]
-            coasting_feats = self.anomaly_engine.process_frame_persistence(
-                frame_idx=frame_idx,
-                observed_track_ids=observed_tids,
-                raw_candidate_boxes=raw_candidates,
-                frame_img=frame,
-                frame_h=height,
-                frame_w=width,
-                fps=fps
-            )
-            for c_feat in coasting_feats:
-                current_pedestrians_state.append(c_feat)
-                if c_feat["anomaly"]:
-                    active_anomalies_summary[c_feat["track_id"]] = c_feat["anomaly_type"]
-                    frame_anomalies.append(c_feat)
 
             # Draw annotations on the CCTV video frame
             annotated_frame = self._render_annotations(frame, current_pedestrians_state, frame_idx, total_frames, fps)
@@ -330,95 +308,66 @@ class PedestrianPipeline:
         """Render zones, bounding boxes, labels, trajectories, and alerts on CCTV frame."""
         annotated = frame.copy()
 
-        # 1. Draw Polygonal Zones
-        zones = self.config.get("zones", {})
-        zone_colors = {
-            "restricted_zones": (0, 0, 220),   # Red
-            "evacuation_routes": (0, 180, 0),   # Green
-            "safe_zones": (220, 180, 0),       # Cyan
-            "exit_zones": (0, 255, 128),       # Light Green
-        }
-        for zgroup, color in zone_colors.items():
-            for zinfo in zones.get(zgroup, []):
-                pts = np.array(zinfo.get("polygon", []), dtype=np.int32)
-                if len(pts) >= 3:
-                    cv2.polylines(annotated, [pts], isClosed=True, color=color, thickness=2)
-                    # Semi-transparent overlay
-                    overlay = annotated.copy()
-                    cv2.fillPoly(overlay, [pts], color=color)
-                    cv2.addWeighted(overlay, 0.15, annotated, 0.85, 0, annotated)
-                    # Label
-                    lbl_pos = (pts[0][0], max(20, pts[0][1] - 5))
-                    cv2.putText(annotated, zinfo.get("name", zgroup), lbl_pos,
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+        # 1. Main evacuation corridor only
+        ov = getattr(self, "overlay_cfg", {}) or {}
+        corr = self.config.get("evacuation_corridor") or {}
+        corr_color = tuple(int(c) for c in (corr.get("color") or [40, 200, 80]))
+        poly = np.array(corr.get("polygon") or [], dtype=np.int32)
+        if len(poly) >= 3:
+            cv2.polylines(annotated, [poly], isClosed=True, color=corr_color, thickness=1, lineType=cv2.LINE_AA)
+        flow = np.array(corr.get("flow_line") or [], dtype=np.int32)
+        if len(flow) >= 2:
+            for i in range(len(flow) - 1):
+                cv2.arrowedLine(annotated, tuple(flow[i]), tuple(flow[i + 1]), corr_color, 2, tipLength=0.04)
+
+        col_normal = tuple(int(c) for c in (ov.get("color_normal_bgr") or [255, 160, 40]))
+        col_anomaly = tuple(int(c) for c in (ov.get("color_anomaly_bgr") or [40, 40, 230]))
 
         # 2. Draw Pedestrians & Trajectories
         active_anomalies = []
         for ped in pedestrians:
             tid = ped["track_id"]
             x1, y1, x2, y2 = [int(v) for v in ped["bbox"]]
-            is_anomaly = ped["anomaly"]
-            anomaly_type = ped["anomaly_type"]
+            is_anomaly = bool(ped.get("anomaly")) and ped.get("anomaly_type") in (
+                "WRONG_DIRECTION", "PROLONGED_STOPPING"
+            )
+            anomaly_type = ped.get("anomaly_type", "NORMAL")
 
-            is_coasting = (ped.get("fall_tracking_state") == "LOST_COASTING" or not ped.get("is_live_observation", True))
+            t_normal = int(ov.get("box_thickness_normal", 1))
+            t_alert = int(ov.get("box_thickness_alert", 2))
+            font_scale = float(ov.get("label_font_scale", 0.32))
+            compact = bool(ov.get("compact_labels", True))
+            show_dir = bool(ov.get("show_direction_in_label", False))
+            show_labels = bool(ov.get("show_track_labels", True))
 
-            # Color coding: Red for critical anomaly/fall, Amber for warning/suspected fall, Cyan for normal
-            if is_coasting:
-                box_color = (0, 140, 255)  # Coasting Amber-Orange
-                thickness = 2
-            elif anomaly_type == "FALL_DETECTED":
-                box_color = (50, 50, 235)  # Critical Red
-                thickness = 2
-            elif anomaly_type == "FALL_SUSPECTED":
-                box_color = (0, 165, 255)  # Warning Amber
-                thickness = 2
-            elif is_anomaly:
-                box_color = (50, 50, 235)  # Red for other anomalies
-                thickness = 2
-            else:
-                box_color = (235, 175, 50)  # Cyan for normal
-                thickness = 1
+            box_color = col_anomaly if is_anomaly else col_normal
+            thickness = t_alert if is_anomaly else t_normal
 
-            # Bounding box
-            if is_coasting:
-                dash_len = 6
-                for dx in range(x1, x2, dash_len * 2):
-                    cv2.line(annotated, (dx, y1), (min(dx + dash_len, x2), y1), box_color, thickness)
-                    cv2.line(annotated, (dx, y2), (min(dx + dash_len, x2), y2), box_color, thickness)
-                for dy in range(y1, y2, dash_len * 2):
-                    cv2.line(annotated, (x1, dy), (x1, min(dy + dash_len, y2)), box_color, thickness)
-                    cv2.line(annotated, (x2, dy), (x2, min(dy + dash_len, y2)), box_color, thickness)
-            else:
-                cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness)
+            cv2.rectangle(annotated, (x1, y1), (x2, y2), box_color, thickness)
 
-            # Foot marker dot
             foot_pt = (int(ped["foot"][0]), int(ped["foot"][1]))
-            cv2.circle(annotated, foot_pt, 3, box_color, -1, cv2.LINE_AA)
+            cv2.circle(annotated, foot_pt, int(ov.get("foot_marker_radius", 2)), box_color, -1, cv2.LINE_AA)
 
-            # Clean compact label text
-            if is_coasting:
-                lbl = f"#{tid} · FALL (COASTING)"
-                active_anomalies.append((tid, "FALL_COASTING"))
-            elif is_anomaly:
+            if is_anomaly:
                 anom_short = {
-                    "FALL_DETECTED": "FALL DETECTED",
-                    "FALL_SUSPECTED": "FALL SUSPECTED",
-                    "PROLONGED_STOPPING": "STOPPING",
-                    "WRONG_DIRECTION": "WRONG DIR",
-                    "RESTRICTED_ZONE_ENTRY": "RESTRICTED"
+                    "PROLONGED_STOPPING": "STOP",
+                    "WRONG_DIRECTION": "DIR",
                 }.get(anomaly_type, anomaly_type)
-                lbl = f"#{tid} · {anom_short}"
+                lbl = f"#{tid} {anom_short}"
                 active_anomalies.append((tid, anomaly_type))
             else:
                 pdir = ped.get("direction", "STATIONARY")
-                lbl = f"#{tid} · {pdir}" if pdir != "STATIONARY" else f"#{tid}"
+                if compact and not show_dir:
+                    lbl = f"#{tid}"
+                else:
+                    lbl = f"#{tid} {pdir}" if show_dir and pdir not in ("STATIONARY", "UNKNOWN") else f"#{tid}"
 
-            # Label background box
-            (tw, th), _ = cv2.getTextSize(lbl, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
-            cv2.rectangle(annotated, (x1, max(0, y1 - th - 6)), (x1 + tw + 6, max(th + 6, y1)), (12, 18, 30), -1)
-            cv2.rectangle(annotated, (x1, max(0, y1 - th - 6)), (x1 + tw + 6, max(th + 6, y1)), box_color, 1)
-            cv2.putText(annotated, lbl, (x1 + 3, max(th + 2, y1 - 3)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.38, (240, 245, 255), 1, cv2.LINE_AA)
+            if show_labels or is_anomaly:
+                (tw, th), _ = cv2.getTextSize(lbl, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
+                cv2.rectangle(annotated, (x1, max(0, y1 - th - 6)), (x1 + tw + 6, max(th + 6, y1)), (12, 18, 30), -1)
+                cv2.rectangle(annotated, (x1, max(0, y1 - th - 6)), (x1 + tw + 6, max(th + 6, y1)), box_color, 1)
+                cv2.putText(annotated, lbl, (x1 + 3, max(th + 2, y1 - 3)),
+                            cv2.FONT_HERSHEY_SIMPLEX, font_scale, (240, 245, 255), 1, cv2.LINE_AA)
 
             # Subtle trajectory line
             traj_pts = ped["trajectory"]

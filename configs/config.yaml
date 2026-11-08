@@ -1,115 +1,114 @@
-# Configuration for Context-Aware Pedestrian Anomaly Detection System
-
-# Machine Learning & Tracking
-yolo_model: "yolov8n.pt"
+yolo_model: weights/aegis_yolo11n_crowdhuman.pt
 detection_confidence: 0.08
-# Phase 27: imgsz=800 best CPU trade-off (F1 0.611 vs 0.586@640); production default
 inference_imgsz: 800
 person_class_id: 0
-device: "auto"  # "auto", "cpu", or "cuda"
-
-# Phase 33 — optional far-camera resolution profile (DISABLED by default).
-# Operator-selected per camera/session only — no automatic scene classification.
-# When enabled, overrides inference_imgsz for the entire streamer/pipeline session
-# (resolved once at start; not switched every frame). Tracker/model unchanged.
+device: auto
+tracker_config: configs/bytetrack_crowd.yaml
+show_untracked_detections: false
+overlay:
+  show_track_labels: true
+  compact_labels: true
+  show_direction_in_label: false
+  show_direction_arrows: true
+  box_thickness_normal: 1
+  box_thickness_alert: 2
+  label_font_scale: 0.32
+  foot_marker_radius: 2
+  trail_max_points: 16
+  color_normal_bgr:
+  - 255
+  - 160
+  - 40
+  color_anomaly_bgr:
+  - 40
+  - 40
+  - 230
+  color_selection_bgr:
+  - 0
+  - 180
+  - 255
 far_camera_profile:
   enabled: false
   inference_imgsz: 960
-  notes: "Phase 32 evidence: far outdoor feeds may gain high-score dets; dense cameras should stay at 800."
-
-# External datasets (Phase 29) — paths relative to project root; do not hardcode single filenames in code
-ucf_dataset_root: "UCF_CrowdsDataset"
-
-# Phase 27: crowd tracker keeps more IDs on consecutive dense frames (MOT20); tiled stays off (precision/FPS collapse)
-tracker_config: "configs/bytetrack_crowd.yaml"
-show_untracked_detections: false  # Diagnostic only: draw raw dets without track IDs (excluded from anomalies)
-
-# Fallen Pedestrian Detection Parameters (Phase 28 hardened CONFIRM vs SUSPECT)
-fall_pose_model: "weights/yolov8n-pose.pt"
-fall_ar_suspect_threshold: 0.72
-fall_ar_confirm_threshold: 0.90
-fall_height_drop_ratio: 0.62
-fall_centroid_drop_threshold: 0.04
-fall_confirm_frames: 6
-fall_max_ground_speed: 55.0
-fall_min_history_for_confirm: 8          # Geometry confirm; pose confirm may use half after ID switch
-fall_confirm_require_dynamic_drop: true  # Block static sitting/bending from confirming
-fall_pose_confirm_frames: 3              # Sustained horizontal torso for pose-based confirm
-fall_max_confirm_ground_speed: 55.0      # Prone person must be nearly stationary to confirm
-fall_post_reassign_cooldown: 8           # Suppress confirm after track jump / reassignment
-
-# Selective Tiled Inference Parameters (Phase 21)
+ucf_dataset_root: UCF_CrowdsDataset
 tiled_inference:
-  enabled: false                       # Default false preserves real-time full-frame 640 baseline
-  tile_width: 640                      # Tile width in pixels
-  tile_height: 540                     # Tile height in pixels
-  overlap_x: 0.20                      # Horizontal overlap ratio (20%)
-  overlap_y: 0.20                      # Vertical overlap ratio (20%)
-  roi_corridor: [0.0, 0.15, 1.0, 0.65] # Normalized ROI [x1, y1, x2, y2] for distant pedestrian band
-  iou_nms_thresh: 0.50                 # Cross-tile NMS deduplication threshold
-  mem_limit_mb: 650.0                  # RSS RAM budget safety ceiling
-
-# Evacuation Context Rules
-expected_evacuation_direction: "RIGHT"  # Options: "RIGHT", "LEFT", "UP", "DOWN"
-stationary_speed_threshold: 0.6        # Pixel movement speed threshold (px/frame) below which pedestrian is stationary (~18 px/sec)
-prolonged_stopping_frames: 30          # Number of consecutive stationary frames to trigger PROLONGED_STOPPING (1.0 sec at 30 FPS)
-direction_window_frames: 10            # Window size for direction smoothing
-
-
-# Trajectory Display & Analysis (Phase 25)
-trajectory_history_max: 20             # Maximum trajectory points kept in memory (10-20 observations)
-trajectory_max_displacement_px: 65.0   # Displacement threshold (px) in 1 frame above which movement is rejected as a jump/reassignment
-trajectory_max_frame_gap: 10           # Maximum frame gap before breaking trail
-trajectory_min_history_for_direction: 8 # Minimum valid consecutive observations required before declaring WRONG_DIRECTION
-trajectory_export_format: "json"        # Export format: "json" or "csv"
-
-# Visualization Settings
+  enabled: false
+  tile_width: 640
+  tile_height: 540
+  overlap_x: 0.2
+  overlap_y: 0.2
+  roi_corridor:
+  - 0.0
+  - 0.15
+  - 1.0
+  - 0.65
+  iou_nms_thresh: 0.5
+  mem_limit_mb: 650.0
+expected_evacuation_direction: UP
+stationary_speed_threshold: 0.6
+prolonged_stopping_frames: 45
+direction_window_frames: 12
+direction_ema_alpha: 0.6
+direction_min_displacement_px: 8.0
+direction_fast_displacement_px: 9.0
+direction_min_speed_px_sec: 5.0
+direction_min_observations: 6
+direction_min_fast_observations: 4
+direction_hysteresis_deg: 28.0
+direction_diagnostic_mode: false
+direction_detection:
+  max_sector_distance_normal: 1
+  angular_tolerance_deg: 45.0
+  wrong_way_sustain_frames: 3
+  recovery_frames: 4
+  cooldown_sec: 4.0
+  require_in_corridor: false
+  min_confidence: 0.45
+stopping_detection:
+  enabled: true
+  threshold_sec: 10.0
+  min_frames: 45
+  critical_sec: 20.0
+adaptive_frame_skipping:
+  enabled: true
+  empty_scene_max_skip: 15
+  normal_flow_max_skip: 4
+  suspect_anomaly_max_skip: 1
+  active_anomaly_max_skip: 2
+  prolonged_stopping_max_skip: 3
+anomaly_history_max: 200
+trajectory_history_max: 24
+trajectory_max_displacement_px: 65.0
+trajectory_max_frame_gap: 10
+trajectory_min_history_for_direction: 8
+trajectory_occlusion_keep_frames: 15
+trajectory_export_format: json
 show_cctv_window: true
 draw_trajectories: true
 draw_zones: true
-cctv_bbox_normal_color: [255, 180, 0]   # BGR Blue/Cyan for normal
-cctv_bbox_anomaly_color: [0, 0, 255]    # BGR Red for anomaly
-
-# Web Server & Digital Twin Communication
-websocket_host: "127.0.0.1"
+websocket_host: 127.0.0.1
 websocket_port: 8765
 http_server_port: 8080
-
-# Default Polygonal Zones (Normalized percentages or exact pixel coordinates)
-# These default coordinates match the layout of test videos (e.g. assets/intrusion.mp4 or running.mp4)
-zones:
-  restricted_zones:
-    - name: "Restricted Zone A"
-      color: [0, 0, 220]  # Red BGR
-      polygon:
-        - [350, 200]
-        - [700, 200]
-        - [700, 500]
-        - [350, 500]
-
-  evacuation_routes:
-    - name: "Main Corridor"
-      color: [0, 200, 0]  # Green BGR
-      polygon:
-        - [50, 100]
-        - [1200, 100]
-        - [1200, 650]
-        - [50, 650]
-
-  safe_zones:
-    - name: "Assembly Safe Area"
-      color: [220, 180, 0]  # Cyan/Blue BGR
-      polygon:
-        - [1000, 50]
-        - [1250, 50]
-        - [1250, 300]
-        - [1000, 300]
-
-  exit_zones:
-    - name: "Emergency Exit 1"
-      color: [0, 255, 128]  # Light Green BGR
-      polygon:
-        - [1150, 300]
-        - [1270, 300]
-        - [1270, 500]
-        - [1150, 500]
+evacuation_corridor:
+  id: corridor_main
+  name: Main Evacuation Corridor
+  expected_direction: LEFT
+  color:
+  - 40
+  - 200
+  - 80
+  polygon:
+  - - 50
+    - 100
+  - - 1200
+    - 100
+  - - 1200
+    - 650
+  - - 50
+    - 650
+  flow_line:
+  - - 80
+    - 375
+  - - 1170
+    - 375
+zones: {}

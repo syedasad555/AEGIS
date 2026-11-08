@@ -55,13 +55,6 @@
           <div class="preset-desc">High-speed movement and emergency corridor directional flow with stationary bystanders.</div>
         </div>
 
-        <div class="preset-card" data-video="assets/fall.mp4" data-dir="RIGHT" data-format="MP4">
-          <div class="preset-badge badge-incident">INCIDENT</div>
-          <div class="preset-title">Pedestrian Fall Incident</div>
-          <div class="preset-file">fall.mp4</div>
-          <div class="preset-meta">720×1280 • 30 FPS • 306 frames</div>
-          <div class="preset-desc">Sudden velocity drop and collapse along an exit path triggering prolonged stationary alerts.</div>
-        </div>
       </div>
 
       <!-- Custom Video Selection Section -->
@@ -217,6 +210,17 @@
           <span class="viewport-title">Live CCTV</span>
           <span class="viewport-tag" id="leftPanelBadge">Primary</span>
         </div>
+        <div class="viewport-header-controls">
+          <!-- Detection Profile Selector -->
+          <div class="detection-profile-group" title="Detection Profile: Adjust inference imgsz & confidence">
+            <span class="control-tiny-label">PROFILE:</span>
+            <select id="detectionProfileSelect" class="header-select select-mini">
+              <option value="performance">Fast (640px)</option>
+              <option value="balanced" selected>Balanced (800px)</option>
+              <option value="accuracy">Accuracy (960px)</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="viewport-body" id="cctvContainer">
         <img id="cctvLiveStream" alt="Live CCTV Feed" class="viewport-stream">
@@ -227,6 +231,35 @@
           <div class="error-title">Unable to Render Video Stream</div>
           <div class="error-detail" id="cctvErrorDetail">File not found or codec unsupported.</div>
           <button id="retryVideoBtn" class="btn btn-secondary" style="margin-top: 10px;">Select Another Video</button>
+        </div>
+      </div>
+      <!-- Video Playback Speed Toolbar -->
+      <div class="playback-speed-bar" id="playbackSpeedBar">
+        <div class="speed-bar-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span>Speed:</span>
+        </div>
+        <div class="speed-buttons" id="speedButtons">
+          <button class="speed-btn" data-speed="0.25">0.25x</button>
+          <button class="speed-btn" data-speed="0.5">0.5x</button>
+          <button class="speed-btn" data-speed="0.75">0.75x</button>
+          <button class="speed-btn active" data-speed="1.0">1x</button>
+          <button class="speed-btn" data-speed="1.25">1.25x</button>
+          <button class="speed-btn" data-speed="1.5">1.5x</button>
+          <button class="speed-btn" data-speed="2.0">2x</button>
+          <button class="speed-btn" data-speed="3.0">3x</button>
+          <button class="speed-btn" data-speed="5.0">5x</button>
+        </div>
+        <div class="speed-custom-group">
+          <input type="number" id="customSpeedInput" min="0.1" max="5.0" step="0.1" placeholder="Custom" class="custom-speed-input" title="Custom speed multiplier (0.1x - 5.0x)">
+          <button id="applyCustomSpeedBtn" class="speed-btn btn-apply-custom">Set</button>
+        </div>
+        <div class="speed-badges-container">
+          <span class="speed-badge req-badge" id="requestedSpeedBadge" title="Requested target speed multiplier">Req: 1.0x</span>
+          <span class="speed-badge act-badge" id="achievedSpeedBadge" title="Actual speed achieved by hardware processing">Act: 1.00x</span>
+          <span class="speed-badge mode-badge" id="monitoringModeBadge" title="Tracking-aware adaptive frame skipping mode">Mode: NORMAL</span>
         </div>
       </div>
     </section>
@@ -250,7 +283,7 @@
 
   </main>
 
-  <!-- Compact Incident List -->
+  <!-- Selection + Incident List -->
   <section class="alert-console">
     <div class="alert-console-header">
       <div class="alert-console-title">
@@ -261,6 +294,17 @@
       <div class="alert-console-actions">
         <span class="alert-hint">Click to highlight on CCTV &amp; map</span>
         <button id="clearSelectionBtn" class="btn-clear-selection" style="display: none;">Clear</button>
+      </div>
+    </div>
+    <div id="selectionPanel" class="selection-panel" style="display: none;">
+      <div class="selection-panel-title">Selected Pedestrian</div>
+      <div class="selection-grid">
+        <div><span class="sel-k">ID</span> <span id="selTrackId">—</span></div>
+        <div><span class="sel-k">Position</span> <span id="selPosition">—</span></div>
+        <div><span class="sel-k">Direction</span> <span id="selDirection">—</span></div>
+        <div><span class="sel-k">Corridor</span> <span id="selZone">—</span></div>
+        <div><span class="sel-k">Status</span> <span id="selStatus">—</span></div>
+        <div><span class="sel-k">Anomaly</span> <span id="selAnomaly">—</span></div>
       </div>
     </div>
     <div class="incident-list" id="alertsList">
@@ -277,7 +321,7 @@
       <span>AEGIS Evacuation Console</span>
     </div>
     <div class="telemetry-right">
-      <span>YOLOv8n person detect + ByteTrack</span>
+      <span>YOLO11n CrowdHuman + ByteTrack</span>
       <span>•</span>
       <span>Digital Twin map is approximate</span>
     </div>
@@ -288,7 +332,7 @@
     <div class="modal-dialog">
       <div class="modal-header">
         <div class="modal-title">
-          <span>⚙ Advanced Settings — Zones &amp; Rules</span>
+          <span>⚙ Evacuation Corridor &amp; Rules</span>
         </div>
         <button id="closeZonesModalBtn" class="modal-close-btn" title="Close">✕</button>
       </div>
@@ -297,24 +341,25 @@
           <div class="form-group">
             <label class="form-label" for="cfgSpeedThreshold">Stationary Speed Threshold (px/frame)</label>
             <input type="number" id="cfgSpeedThreshold" class="form-control" value="0.6" step="0.1" min="0.1">
-            <span class="form-hint">Smoothed speed below which a pedestrian is considered stopped (~18 px/s at 30 FPS).</span>
+            <span class="form-hint">Smoothed speed below which a pedestrian is considered stopped.</span>
           </div>
           <div class="form-group">
             <label class="form-label" for="cfgStoppingFrames">Stopping Alert Threshold (Frames)</label>
             <input type="number" id="cfgStoppingFrames" class="form-control" value="30" step="5" min="5">
-            <span class="form-hint">Consecutive stationary frames to trigger PROLONGED_STOPPING (30 frames = 1.0s at 30 FPS).</span>
+            <span class="form-hint">Consecutive stationary frames for PROLONGED_STOPPING.</span>
           </div>
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
-          <label class="form-label" for="cfgZonesJson">Active Polygonal Zones Definition (GeoJSON / Pixel Polygon)</label>
+          <label class="form-label" for="cfgZonesJson">Evacuation Corridor (pixel polygon + flow_line + expected_direction)</label>
           <textarea id="cfgZonesJson" class="form-control form-code" rows="9"></textarea>
-          <span class="form-hint">Zone groups: restricted_zones (Danger/Red), evacuation_routes (Corridor/Green), safe_zones (Assembly/Cyan), exit_zones (Egress/Light Green).</span>
+          <span class="form-hint">Only evacuation_corridor is supported. Obsolete restricted / exit / monitoring / safe zones are rejected.</span>
         </div>
+        <div class="form-hint" style="margin-top:8px;">Legend: <span style="color:#38bdf8">Blue</span> normal · <span style="color:#ef4444">Red</span> confirmed anomaly · <span style="color:#f59e0b">Amber</span> selected · <span style="color:#10b981">Green</span> flow</div>
       </div>
       <div class="modal-footer">
-        <button id="resetZonesBtn" class="btn btn-secondary">Reset to Default</button>
-        <button id="saveZonesBtn" class="btn btn-primary">Apply & Reconfigure Pipeline</button>
+        <button id="resetZonesBtn" class="btn btn-secondary">Reset Corridor</button>
+        <button id="saveZonesBtn" class="btn btn-primary">Apply &amp; Reconfigure</button>
       </div>
     </div>
   </div>
@@ -322,6 +367,20 @@
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="/digital_twin/app.js?v=20261024_p26"></script>
+  <!-- Debug Diagnostic Panel (toggle with Ctrl+Shift+D) -->
+  <div id="debugPanel" style="display:none; position:fixed; bottom:40px; right:12px; z-index:9999;
+       background:rgba(8,12,22,0.97); border:1px solid #273852; border-radius:6px;
+       padding:10px 14px; font-family:monospace; font-size:11px; color:#94a3b8;
+       max-width:420px; max-height:260px; overflow-y:auto; box-shadow:0 4px 24px #000a;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="color:#38bdf8;font-weight:600;">AEGIS Debug Panel</span>
+      <button onclick="document.getElementById('debugPanel').style.display='none'"
+              style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;">✕</button>
+    </div>
+    <pre id="debugPanelContent" style="margin:0;white-space:pre-wrap;line-height:1.5;"></pre>
+    <div style="margin-top:6px;color:#475569;font-size:10px;">Press Ctrl+Shift+D to toggle · Click track to inspect</div>
+  </div>
+
+  <script src="/digital_twin/app.js?v=20261108_v4fix"></script>
 </body>
 </html>
