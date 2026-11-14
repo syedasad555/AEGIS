@@ -112,3 +112,12 @@ websocket_host: 127.0.0.1
 websocket_port: 8765
 yolo_model: weights/aegis_yolo11n_crowdhuman.pt
 zones: {}
+
+# Phase 3 Advanced Classification & Accuracy Improvement Flags
+enable_multi_horizon: true
+enable_impulse_filter: true
+enable_confidence_ema: true
+enable_curvature_suppression: true
+enable_stationary_jitter_suppression: true
+enable_adaptive_stopping_ratio: true
+

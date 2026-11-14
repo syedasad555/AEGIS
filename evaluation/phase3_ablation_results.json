@@ -1,0 +1,326 @@
+{
+  "Phase 2 Baseline": {
+    "overall": {
+      "accuracy": 0.8056,
+      "macro_f1": 0.7978,
+      "confusion_matrix": [
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          4,
+          2,
+          7
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 12,
+          "FP": 4,
+          "FN": 0,
+          "TN": 20,
+          "prec": 0.75,
+          "rec": 1.0,
+          "f1": 0.8571
+        },
+        "WRONG_DIRECTION": {
+          "TP": 10,
+          "FP": 2,
+          "FN": 1,
+          "TN": 23,
+          "prec": 0.8333,
+          "rec": 0.9091,
+          "f1": 0.8696
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 7,
+          "FP": 1,
+          "FN": 6,
+          "TN": 22,
+          "prec": 0.875,
+          "rec": 0.5385,
+          "f1": 0.6667
+        }
+      }
+    },
+    "avg_pipeline_eval_latency_ms": 3.274,
+    "fps_achieved": 305.4
+  },
+  "+ Component 1: Multi-Horizon Direction": {
+    "overall": {
+      "accuracy": 0.8056,
+      "macro_f1": 0.7978,
+      "confusion_matrix": [
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          4,
+          2,
+          7
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 12,
+          "FP": 4,
+          "FN": 0,
+          "TN": 20,
+          "prec": 0.75,
+          "rec": 1.0,
+          "f1": 0.8571
+        },
+        "WRONG_DIRECTION": {
+          "TP": 10,
+          "FP": 2,
+          "FN": 1,
+          "TN": 23,
+          "prec": 0.8333,
+          "rec": 0.9091,
+          "f1": 0.8696
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 7,
+          "FP": 1,
+          "FN": 6,
+          "TN": 22,
+          "prec": 0.875,
+          "rec": 0.5385,
+          "f1": 0.6667
+        }
+      }
+    },
+    "avg_pipeline_eval_latency_ms": 3.191,
+    "fps_achieved": 313.4
+  },
+  "+ Component 2: Curvature & Avoidance Recognition": {
+    "overall": {
+      "accuracy": 0.8056,
+      "macro_f1": 0.7978,
+      "confusion_matrix": [
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          4,
+          2,
+          7
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 12,
+          "FP": 4,
+          "FN": 0,
+          "TN": 20,
+          "prec": 0.75,
+          "rec": 1.0,
+          "f1": 0.8571
+        },
+        "WRONG_DIRECTION": {
+          "TP": 10,
+          "FP": 2,
+          "FN": 1,
+          "TN": 23,
+          "prec": 0.8333,
+          "rec": 0.9091,
+          "f1": 0.8696
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 7,
+          "FP": 1,
+          "FN": 6,
+          "TN": 22,
+          "prec": 0.875,
+          "rec": 0.5385,
+          "f1": 0.6667
+        }
+      }
+    },
+    "avg_pipeline_eval_latency_ms": 3.226,
+    "fps_achieved": 310.0
+  },
+  "+ Component 3: False Wrong-Direction Suppression on Jitter": {
+    "overall": {
+      "accuracy": 0.8056,
+      "macro_f1": 0.7978,
+      "confusion_matrix": [
+        [
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          4,
+          2,
+          7
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 12,
+          "FP": 4,
+          "FN": 0,
+          "TN": 20,
+          "prec": 0.75,
+          "rec": 1.0,
+          "f1": 0.8571
+        },
+        "WRONG_DIRECTION": {
+          "TP": 10,
+          "FP": 2,
+          "FN": 1,
+          "TN": 23,
+          "prec": 0.8333,
+          "rec": 0.9091,
+          "f1": 0.8696
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 7,
+          "FP": 1,
+          "FN": 6,
+          "TN": 22,
+          "prec": 0.875,
+          "rec": 0.5385,
+          "f1": 0.6667
+        }
+      }
+    },
+    "avg_pipeline_eval_latency_ms": 3.201,
+    "fps_achieved": 312.4
+  },
+  "+ Component 4: Adaptive Stopping & Spatial Disambiguation": {
+    "overall": {
+      "accuracy": 0.9167,
+      "macro_f1": 0.9182,
+      "confusion_matrix": [
+        [
+          11,
+          0,
+          1
+        ],
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          0,
+          1,
+          12
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 11,
+          "FP": 0,
+          "FN": 1,
+          "TN": 24,
+          "prec": 1.0,
+          "rec": 0.9167,
+          "f1": 0.9565
+        },
+        "WRONG_DIRECTION": {
+          "TP": 10,
+          "FP": 1,
+          "FN": 1,
+          "TN": 24,
+          "prec": 0.9091,
+          "rec": 0.9091,
+          "f1": 0.9091
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 12,
+          "FP": 2,
+          "FN": 1,
+          "TN": 21,
+          "prec": 0.8571,
+          "rec": 0.9231,
+          "f1": 0.8889
+        }
+      }
+    },
+    "avg_pipeline_eval_latency_ms": 3.308,
+    "fps_achieved": 302.3
+  },
+  "Phase 3 Architecture (Full Combined)": {
+    "overall": {
+      "accuracy": 0.9167,
+      "macro_f1": 0.9182,
+      "confusion_matrix": [
+        [
+          11,
+          0,
+          1
+        ],
+        [
+          0,
+          10,
+          1
+        ],
+        [
+          0,
+          1,
+          12
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 11,
+          "FP": 0,
+          "FN": 1,
+          "TN": 24,
+          "prec": 1.0,
+          "rec": 0.9167,
+          "f1": 0.9565
+        },
+        "WRONG_DIRECTION": {
+          "TP": 10,
+          "FP": 1,
+          "FN": 1,
+          "TN": 24,
+          "prec": 0.9091,
+          "rec": 0.9091,
+          "f1": 0.9091
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 12,
+          "FP": 2,
+          "FN": 1,
+          "TN": 21,
+          "prec": 0.8571,
+          "rec": 0.9231,
+          "f1": 0.8889
+        }
+      }
+    },
+    "avg_pipeline_eval_latency_ms": 3.318,
+    "fps_achieved": 301.4
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "name": "Sweep_t=20.0_norm=True",
+  "overall": {
+    "accuracy": 0.7222222222222222,
+    "macro_f1": 0.7116271409749672,
+    "confusion_matrix": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        5,
+        5,
+        1
+      ],
+      [
+        4,
+        0,
+        9
+      ]
+    ],
+    "per_class": {
+      "NORMAL": {
+        "TP": 12,
+        "FP": 9,
+        "FN": 0,
+        "TN": 15,
+        "prec": 0.5714285714285714,
+        "rec": 1.0,
+        "f1": 0.7272727272727273
+      },
+      "WRONG_DIRECTION": {
+        "TP": 5,
+        "FP": 0,
+        "FN": 6,
+        "TN": 25,
+        "prec": 1.0,
+        "rec": 0.45454545454545453,
+        "f1": 0.625
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 9,
+        "FP": 1,
+        "FN": 4,
+        "TN": 22,
+        "prec": 0.9,
+        "rec": 0.6923076923076923,
+        "f1": 0.7826086956521738
+      }
+    }
+  },
+  "folds": {
+    "Fold 1": {
+      "accuracy": 0.5833333333333334,
+      "macro_f1": 0.5651515151515151,
+      "confusion_matrix": [
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          3,
+          1,
+          0
+        ],
+        [
+          2,
+          0,
+          3
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 3,
+          "FP": 5,
+          "FN": 0,
+          "TN": 4,
+          "prec": 0.375,
+          "rec": 1.0,
+          "f1": 0.5454545454545454
+        },
+        "WRONG_DIRECTION": {
+          "TP": 1,
+          "FP": 0,
+          "FN": 3,
+          "TN": 8,
+          "prec": 1.0,
+          "rec": 0.25,
+          "f1": 0.4
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 3,
+          "FP": 0,
+          "FN": 2,
+          "TN": 7,
+          "prec": 1.0,
+          "rec": 0.6,
+          "f1": 0.7499999999999999
+        }
+      }
+    },
+    "Fold 2": {
+      "accuracy": 0.6666666666666666,
+      "macro_f1": 0.6257575757575758,
+      "confusion_matrix": [
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          3
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 4,
+          "FP": 3,
+          "FN": 0,
+          "TN": 5,
+          "prec": 0.5714285714285714,
+          "rec": 1.0,
+          "f1": 0.7272727272727273
+        },
+        "WRONG_DIRECTION": {
+          "TP": 1,
+          "FP": 0,
+          "FN": 3,
+          "TN": 8,
+          "prec": 1.0,
+          "rec": 0.25,
+          "f1": 0.4
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 3,
+          "FP": 1,
+          "FN": 1,
+          "TN": 7,
+          "prec": 0.75,
+          "rec": 0.75,
+          "f1": 0.75
+        }
+      }
+    },
+    "Fold 3": {
+      "accuracy": 0.9166666666666666,
+      "macro_f1": 0.9220779220779222,
+      "confusion_matrix": [
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 5,
+          "FP": 1,
+          "FN": 0,
+          "TN": 6,
+          "prec": 0.8333333333333334,
+          "rec": 1.0,
+          "f1": 0.9090909090909091
+        },
+        "WRONG_DIRECTION": {
+          "TP": 3,
+          "FP": 0,
+          "FN": 0,
+          "TN": 9,
+          "prec": 1.0,
+          "rec": 1.0,
+          "f1": 1.0
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 3,
+          "FP": 0,
+          "FN": 1,
+          "TN": 8,
+          "prec": 1.0,
+          "rec": 0.75,
+          "f1": 0.8571428571428571
+        }
+      }
+    }
+  },
+  "preds": {
+    "2018-6_70.mov_id_1": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "2018-6_70.mov_id_3": [
+      "WRONG_DIRECTION",
+      "NORMAL"
+    ],
+    "2018-6_70.mov_id_6": [
+      "PROLONGED_STOPPING",
+      "NORMAL"
+    ],
+    "3687-18_70.mov_id_4": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "3687-18_70.mov_id_1": [
+      "WRONG_DIRECTION",
+      "NORMAL"
+    ],
+    "3687-18_70.mov_id_121": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "620-72_l.mov_id_91": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "620-72_l.mov_id_2": [
+      "WRONG_DIRECTION",
+      "WRONG_DIRECTION"
+    ],
+    "620-72_l.mov_id_1": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "9019-13_l.mov_id_78": [
+      "PROLONGED_STOPPING",
+      "NORMAL"
+    ],
+    "9019-13_l.mov_id_77": [
+      "WRONG_DIRECTION",
+      "NORMAL"
+    ],
+    "9019-13_l.mov_id_1": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "2082-3_70.mov_id_1": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "2082-3_70.mov_id_2": [
+      "WRONG_DIRECTION",
+      "PROLONGED_STOPPING"
+    ],
+    "2082-3_70.mov_id_24": [
+      "PROLONGED_STOPPING",
+      "NORMAL"
+    ],
+    "637-147_l.mov_id_1": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "637-147_l.mov_id_10": [
+      "WRONG_DIRECTION",
+      "NORMAL"
+    ],
+    "637-147_l.mov_id_2": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "821-10_l.mov_id_7": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "821-10_l.mov_id_77": [
+      "WRONG_DIRECTION",
+      "NORMAL"
+    ],
+    "821-10_l.mov_id_1": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "913-35_l.mov_id_429": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "913-35_l.mov_id_84": [
+      "WRONG_DIRECTION",
+      "WRONG_DIRECTION"
+    ],
+    "913-35_l.mov_id_1": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "341-46_l.mov_id_1": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "341-46_l.mov_id_3": [
+      "WRONG_DIRECTION",
+      "WRONG_DIRECTION"
+    ],
+    "341-46_l.mov_id_30": [
+      "PROLONGED_STOPPING",
+      "NORMAL"
+    ],
+    "7399-1_70.mov_id_2": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "7399-1_70.mov_id_119": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "7399-1_70.mov_id_1": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "9-19_l.mov_id_84": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "9-19_l.mov_id_27": [
+      "WRONG_DIRECTION",
+      "WRONG_DIRECTION"
+    ],
+    "9-19_l.mov_id_9": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ],
+    "913-37_l.mov_id_4": [
+      "NORMAL",
+      "NORMAL"
+    ],
+    "913-37_l.mov_id_2": [
+      "WRONG_DIRECTION",
+      "WRONG_DIRECTION"
+    ],
+    "913-37_l.mov_id_6": [
+      "PROLONGED_STOPPING",
+      "PROLONGED_STOPPING"
+    ]
+  }
+}

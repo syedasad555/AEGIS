@@ -1,0 +1,267 @@
+{
+  "Phase 1 Baseline": {
+    "accuracy": 0.8055555555555556,
+    "macro_f1": 0.7977915804002761,
+    "confusion_matrix": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        0,
+        10,
+        1
+      ],
+      [
+        4,
+        2,
+        7
+      ]
+    ],
+    "per_class": {
+      "NORMAL": {
+        "TP": 12,
+        "FP": 4,
+        "FN": 0,
+        "TN": 20,
+        "prec": 0.75,
+        "rec": 1.0,
+        "f1": 0.8571428571428571
+      },
+      "WRONG_DIRECTION": {
+        "TP": 10,
+        "FP": 2,
+        "FN": 1,
+        "TN": 23,
+        "prec": 0.8333333333333334,
+        "rec": 0.9090909090909091,
+        "f1": 0.8695652173913043
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 7,
+        "FP": 1,
+        "FN": 6,
+        "TN": 22,
+        "prec": 0.875,
+        "rec": 0.5384615384615384,
+        "f1": 0.6666666666666667
+      }
+    },
+    "feature_latency_ms": 3.076,
+    "total_latency_ms": 76.71,
+    "fps": 13.0
+  },
+  "+ Component A (Trajectory Smoothing & Outliers)": {
+    "accuracy": 0.8055555555555556,
+    "macro_f1": 0.7977915804002761,
+    "confusion_matrix": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        0,
+        10,
+        1
+      ],
+      [
+        4,
+        2,
+        7
+      ]
+    ],
+    "per_class": {
+      "NORMAL": {
+        "TP": 12,
+        "FP": 4,
+        "FN": 0,
+        "TN": 20,
+        "prec": 0.75,
+        "rec": 1.0,
+        "f1": 0.8571428571428571
+      },
+      "WRONG_DIRECTION": {
+        "TP": 10,
+        "FP": 2,
+        "FN": 1,
+        "TN": 23,
+        "prec": 0.8333333333333334,
+        "rec": 0.9090909090909091,
+        "f1": 0.8695652173913043
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 7,
+        "FP": 1,
+        "FN": 6,
+        "TN": 22,
+        "prec": 0.875,
+        "rec": 0.5384615384615384,
+        "f1": 0.6666666666666667
+      }
+    },
+    "feature_latency_ms": 3.024,
+    "total_latency_ms": 76.65,
+    "fps": 13.0
+  },
+  "+ Component B (Exit-Aware Approach Verification)": {
+    "accuracy": 0.8055555555555556,
+    "macro_f1": 0.7977915804002761,
+    "confusion_matrix": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        0,
+        10,
+        1
+      ],
+      [
+        4,
+        2,
+        7
+      ]
+    ],
+    "per_class": {
+      "NORMAL": {
+        "TP": 12,
+        "FP": 4,
+        "FN": 0,
+        "TN": 20,
+        "prec": 0.75,
+        "rec": 1.0,
+        "f1": 0.8571428571428571
+      },
+      "WRONG_DIRECTION": {
+        "TP": 10,
+        "FP": 2,
+        "FN": 1,
+        "TN": 23,
+        "prec": 0.8333333333333334,
+        "rec": 0.9090909090909091,
+        "f1": 0.8695652173913043
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 7,
+        "FP": 1,
+        "FN": 6,
+        "TN": 22,
+        "prec": 0.875,
+        "rec": 0.5384615384615384,
+        "f1": 0.6666666666666667
+      }
+    },
+    "feature_latency_ms": 2.92,
+    "total_latency_ms": 76.55,
+    "fps": 13.1
+  },
+  "+ Component C (Multi-Horizon & Short-Track)": {
+    "accuracy": 0.8055555555555556,
+    "macro_f1": 0.7977915804002761,
+    "confusion_matrix": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        0,
+        10,
+        1
+      ],
+      [
+        4,
+        2,
+        7
+      ]
+    ],
+    "per_class": {
+      "NORMAL": {
+        "TP": 12,
+        "FP": 4,
+        "FN": 0,
+        "TN": 20,
+        "prec": 0.75,
+        "rec": 1.0,
+        "f1": 0.8571428571428571
+      },
+      "WRONG_DIRECTION": {
+        "TP": 10,
+        "FP": 2,
+        "FN": 1,
+        "TN": 23,
+        "prec": 0.8333333333333334,
+        "rec": 0.9090909090909091,
+        "f1": 0.8695652173913043
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 7,
+        "FP": 1,
+        "FN": 6,
+        "TN": 22,
+        "prec": 0.875,
+        "rec": 0.5384615384615384,
+        "f1": 0.6666666666666667
+      }
+    },
+    "feature_latency_ms": 2.967,
+    "total_latency_ms": 76.6,
+    "fps": 13.1
+  },
+  "Full Phase 2 Architecture (Combined)": {
+    "accuracy": 0.8055555555555556,
+    "macro_f1": 0.7977915804002761,
+    "confusion_matrix": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        0,
+        10,
+        1
+      ],
+      [
+        4,
+        2,
+        7
+      ]
+    ],
+    "per_class": {
+      "NORMAL": {
+        "TP": 12,
+        "FP": 4,
+        "FN": 0,
+        "TN": 20,
+        "prec": 0.75,
+        "rec": 1.0,
+        "f1": 0.8571428571428571
+      },
+      "WRONG_DIRECTION": {
+        "TP": 10,
+        "FP": 2,
+        "FN": 1,
+        "TN": 23,
+        "prec": 0.8333333333333334,
+        "rec": 0.9090909090909091,
+        "f1": 0.8695652173913043
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 7,
+        "FP": 1,
+        "FN": 6,
+        "TN": 22,
+        "prec": 0.875,
+        "rec": 0.5384615384615384,
+        "f1": 0.6666666666666667
+      }
+    },
+    "feature_latency_ms": 3.101,
+    "total_latency_ms": 76.73,
+    "fps": 13.0
+  }
+}

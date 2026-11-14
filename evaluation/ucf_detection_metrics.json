@@ -1,0 +1,17 @@
+{
+  "model": "YOLO11n Fine-Tuned CrowdHuman Checkpoint (weights/aegis_yolo11n_crowdhuman.pt)",
+  "crowdhuman_validation_reference": {
+    "mAP_50": 0.826,
+    "mAP_50_95": 0.509,
+    "precision": 0.8475,
+    "recall": 0.7141,
+    "f1_score": 0.7751
+  },
+  "ucf_crowd_inference_throughput": {
+    "input_resolution": "800x800",
+    "device": "CPU (Intel/AMD)",
+    "average_inference_ms": 112.4,
+    "fps": 8.9,
+    "gpu_projected_fps": 55.0
+  }
+}

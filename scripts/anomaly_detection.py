@@ -19,6 +19,7 @@ Fall detection removed.
 from __future__ import annotations
 
 import json
+import math
 import time
 import uuid
 from collections import defaultdict, deque
@@ -32,6 +33,8 @@ try:
         DirectionClassifier,
         normalize_direction_label,
         angular_deviation_deg,
+        angle_to_direction8,
+        classify_direction_sectors,
     )
 except ImportError:
     from scripts.feature_extraction import TrajectoryFeatureExtractor
@@ -39,6 +42,8 @@ except ImportError:
         DirectionClassifier,
         normalize_direction_label,
         angular_deviation_deg,
+        angle_to_direction8,
+        classify_direction_sectors,
     )
 
 
@@ -93,6 +98,24 @@ class EvacuationAnomalyEngine:
         self.wrong_dir_cooldown_sec = float(dir_cfg.get("cooldown_sec", 4.0))
         self.require_in_corridor = bool(dir_cfg.get("require_in_corridor", False))
 
+        # Long-horizon cumulative displacement verification for stopping
+        self.long_horizon_stopping_enabled = bool(stop_cfg.get("long_horizon_verification", True))
+        self.max_cumulative_disp_px = float(stop_cfg.get("max_cumulative_disp_px", 20.0))
+        self.track_foot_history: Dict[int, deque] = defaultdict(lambda: deque(maxlen=200))
+
+        # Phase 3 feature flags
+        self.enable_curvature_suppression = bool(config.get("enable_curvature_suppression", True))
+        self.enable_stationary_jitter_suppression = bool(config.get("enable_stationary_jitter_suppression", True))
+        self.enable_adaptive_stopping_ratio = bool(config.get("enable_adaptive_stopping_ratio", True))
+
+        # Exit region management for exit-aware directional turns
+        exit_cfg = config.get("exit_regions") or config.get("exits") or []
+        try:
+            from exit_regions import ExitRegionManager
+        except ImportError:
+            from scripts.exit_regions import ExitRegionManager
+        self.exit_manager = ExitRegionManager(exit_cfg)
+
         self.active_events: Dict[Tuple[str, int], AnomalyEvent] = {}
         self.event_history: deque = deque(maxlen=int(config.get("anomaly_history_max", 200)))
         self.anomaly_events: List[Dict[str, Any]] = []
@@ -138,6 +161,8 @@ class EvacuationAnomalyEngine:
         self.event_history.clear()
         self.anomaly_events.clear()
         self.track_anomaly_start.clear()
+        if hasattr(self, "track_foot_history"):
+            self.track_foot_history.clear()
         self.wrong_dir_counters.clear()
         self.recovery_counters.clear()
         self.last_fire_time.clear()
@@ -264,16 +289,58 @@ class EvacuationAnomalyEngine:
                 self._resolve_event(ev_key, ts)
             return None
 
-        # Guard: If pedestrian is stationary or has accumulated stopping frames,
+        # Exit-aware turn verification:
+        # If pedestrian is located within a configured exit region and their heading
+        # is consistent with exit egress (e.g. orthogonal turn toward exit boundary),
+        # do not flag as WRONG_DIRECTION.
+        foot = f.get("foot") or f.get("center") or (0.0, 0.0)
+        actual_dir = clf.get("actual_direction", "UNKNOWN")
+        exp_dir = clf.get("expected_direction", self.classifier.expected)
+        dvec = f.get("direction_vector") or [0.0, 0.0]
+        mv = (float(dvec[0]), float(dvec[1])) if len(dvec) >= 2 else None
+        if hasattr(self, "exit_manager") and self.exit_manager.is_exit_turn_permitted(
+            foot[0], foot[1], actual_dir, exp_dir, movement_vector=mv, camera_id=self.camera_id
+        ):
+            self.wrong_dir_counters[tid] = 0
+            if ev_key in self.active_events:
+                self.recovery_counters[tid] += 1
+                if self.recovery_counters[tid] >= 2:
+                    self._resolve_event(ev_key, ts)
+                    self.recovery_counters[tid] = 0
+            return None
+
+        # Guard: If pedestrian is currently stationary or movement direction is unreliable,
         # they must NOT be flagged as WRONG_DIRECTION on random noise jitter.
-        stop_frames = int(f.get("stopping_duration_frames", 0))
         is_stationary = (
             f.get("movement_status") == "STATIONARY"
             or clf.get("actual_direction") == "STATIONARY"
-            or stop_frames >= 12
+            or not f.get("direction_reliable", False)
         )
+
+        # Physical displacement & stationary disambiguation:
+        # Bounded coordinate jitter (< 12px) on a pedestrian whose lifetime speed is low (< 4.5 px/s)
+        # cannot represent genuine sustained counterflow locomotion.
+        net_d = float(f.get("net_displacement_px", 0.0))
+        tot_obs = int(f.get("total_observations", 0))
+        speed = float(f.get("speed_px_sec", 0.0))
+        if self.enable_stationary_jitter_suppression and tot_obs >= 20 and net_d < 12.0 and speed < 4.5:
+            is_stationary = True
+
+        # Curved Trajectory & Avoidance Recognition:
+        # If trajectory is curved (e.g. dodging a cluster or negotiating a bend):
+        # check if macro-trend long-direction vector is compliant with expected evacuation flow
+        if self.enable_curvature_suppression and f.get("is_curved_trajectory", False):
+            long_vec = f.get("long_direction_vector")
+            if long_vec and (abs(long_vec[0]) > 1e-3 or abs(long_vec[1]) > 1e-3):
+                long_dir = angle_to_direction8(long_vec[0], long_vec[1])
+                long_clf = classify_direction_sectors(long_dir, exp_dir)
+                if long_clf.get("classification") == "NORMAL":
+                    # Instantaneous veer is a temporary obstacle dodge / corridor bend
+                    is_stationary = True
+
         if is_stationary:
-            self.wrong_dir_counters[tid] = 0
+            if self.wrong_dir_counters[tid] > 0:
+                self.wrong_dir_counters[tid] = max(0, self.wrong_dir_counters[tid] - 1)
             if ev_key in self.active_events:
                 self.recovery_counters[tid] += 1
                 if self.recovery_counters[tid] >= 2:
@@ -376,9 +443,49 @@ class EvacuationAnomalyEngine:
     ) -> Optional[Tuple[str, str, float, str, Dict]]:
         stop_sec = float(f.get("stopping_duration_sec", 0.0))
         stop_frames = int(f.get("stopping_duration_frames", 0))
-        meets = stop_frames >= self.stopping_min_frames and stop_sec >= self.stopping_threshold_sec
         tid = int(f.get("track_id", -1))
         ev_key = ("PROLONGED_STOPPING", tid)
+
+        # Lifespan Spatial Disambiguation:
+        # A pedestrian who has moved >= 25.0px net displacement across their history
+        # has physically traversed the scene and is actively traveling, NOT prolonged stopping.
+        net_d = float(f.get("net_displacement_px", 0.0))
+        if net_d >= 25.0:
+            if ev_key in self.active_events:
+                self._resolve_event(ev_key, ts)
+            return None
+
+        # Adaptive Stopping Verification:
+        # 1. Standard duration meets threshold:
+        #    stop_frames >= self.stopping_min_frames and stop_sec >= self.stopping_threshold_sec
+        # 2. Or Lifespan Stationary Ratio:
+        #    If track has accumulated >= 20 observations, net displacement is strictly bounded (< 12.0px),
+        #    and stationary ratio >= 0.70, it is confirmed prolonged stopping.
+        tot_obs = int(f.get("total_observations", stop_frames))
+        stat_ratio = float(f.get("stationary_ratio", 0.0))
+        meets_standard = stop_frames >= self.stopping_min_frames and stop_sec >= self.stopping_threshold_sec
+        meets_ratio = (self.enable_adaptive_stopping_ratio and tot_obs >= 20 and stat_ratio >= 0.70 and net_d < 12.0)
+        meets = meets_standard or meets_ratio
+
+        # Record foot point in history for long-horizon cumulative spatial displacement check
+        foot = f.get("foot") or f.get("center") or (0.0, 0.0)
+        hist = self.track_foot_history[tid]
+        hist.append((ts, float(foot[0]), float(foot[1])))
+
+        # Long-horizon spatial displacement verification:
+        # A pedestrian who has moved >= max_cumulative_disp_px over the configured stopping duration
+        # is physically traveling (e.g. slowly moving in a bottleneck) rather than genuinely stationary.
+        if meets and self.long_horizon_stopping_enabled and len(hist) >= 2:
+            target_t = ts - self.stopping_threshold_sec
+            # Find the reference observation closest to target_t (from history before target_t, or earliest available)
+            candidates = [item for item in hist if item[0] <= target_t]
+            ref = candidates[-1] if candidates else hist[0]
+            net_disp = math.hypot(foot[0] - ref[1], foot[1] - ref[2])
+            if net_disp >= self.max_cumulative_disp_px:
+                # Cumulative displacement confirms active physical movement
+                if ev_key in self.active_events:
+                    self._resolve_event(ev_key, ts)
+                return None
 
         if not meets:
             if ev_key in self.active_events:

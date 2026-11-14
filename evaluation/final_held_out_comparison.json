@@ -1,0 +1,437 @@
+{
+  "baseline": {
+    "metrics": {
+      "accuracy": 0.6923076923076923,
+      "macro_f1": 0.6452991452991452,
+      "confusion_matrix": [
+        [
+          5,
+          1,
+          1
+        ],
+        [
+          1,
+          3,
+          0
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 5,
+          "FP": 1,
+          "FN": 2,
+          "TN": 5,
+          "prec": 0.8333333333333334,
+          "rec": 0.7142857142857143,
+          "f1": 0.7692307692307692
+        },
+        "WRONG_DIRECTION": {
+          "TP": 3,
+          "FP": 2,
+          "FN": 1,
+          "TN": 7,
+          "prec": 0.6,
+          "rec": 0.75,
+          "f1": 0.6666666666666665
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 1,
+          "FP": 1,
+          "FN": 1,
+          "TN": 10,
+          "prec": 0.5,
+          "rec": 0.5,
+          "f1": 0.5
+        }
+      }
+    },
+    "events": [
+      {
+        "video_name": "688-10_l.mov",
+        "track_id": 1,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 117
+        },
+        "total_frames": 117,
+        "notes": "Track 1 moving UP_RIGHT (net_disp=328.0px, speed=68.9px/s)"
+      },
+      {
+        "video_name": "688-10_l.mov",
+        "track_id": 1278,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 25
+        },
+        "total_frames": 25,
+        "notes": "Track 1278 moving UP_RIGHT (net_disp=64.7px, speed=64.7px/s)"
+      },
+      {
+        "video_name": "688-10_l.mov",
+        "track_id": 1249,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 28
+        },
+        "total_frames": 28,
+        "notes": "Track 1249 moving UP_RIGHT (net_disp=71.9px, speed=64.2px/s)"
+      },
+      {
+        "video_name": "861-13_70.mov",
+        "track_id": 3,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "NORMAL",
+        "correct": false,
+        "counts": {
+          "NORMAL": 69
+        },
+        "total_frames": 69,
+        "notes": "Track 3 moving LEFT (net_disp=38.3px, speed=14.1px/s)"
+      },
+      {
+        "video_name": "879-38_l.mov",
+        "track_id": 4,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 119,
+          "WRONG_DIRECTION": 1
+        },
+        "total_frames": 120,
+        "notes": "Track 4 moving DOWN_RIGHT (net_disp=234.9px, speed=49.3px/s)"
+      },
+      {
+        "video_name": "879-38_l.mov",
+        "track_id": 1,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "WRONG_DIRECTION",
+        "correct": true,
+        "counts": {
+          "NORMAL": 95,
+          "WRONG_DIRECTION": 25
+        },
+        "total_frames": 120,
+        "notes": "Track 1 moving LEFT (net_disp=282.5px, speed=59.4px/s)"
+      },
+      {
+        "video_name": "879-38_l.mov",
+        "track_id": 37,
+        "ground_truth": "PROLONGED_STOPPING",
+        "predicted": "WRONG_DIRECTION",
+        "correct": false,
+        "counts": {
+          "NORMAL": 64,
+          "WRONG_DIRECTION": 37
+        },
+        "total_frames": 101,
+        "notes": "Track 37 moving STATIONARY (net_disp=14.8px, speed=3.1px/s)"
+      },
+      {
+        "video_name": "906-17_l.mov",
+        "track_id": 4,
+        "ground_truth": "NORMAL",
+        "predicted": "PROLONGED_STOPPING",
+        "correct": false,
+        "counts": {
+          "NORMAL": 74,
+          "PROLONGED_STOPPING": 44
+        },
+        "total_frames": 118,
+        "notes": "Track 4 moving UP_LEFT (net_disp=54.3px, speed=11.4px/s)"
+      },
+      {
+        "video_name": "906-17_l.mov",
+        "track_id": 1,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "WRONG_DIRECTION",
+        "correct": true,
+        "counts": {
+          "NORMAL": 70,
+          "WRONG_DIRECTION": 9
+        },
+        "total_frames": 79,
+        "notes": "Track 1 moving UP (net_disp=77.2px, speed=24.7px/s)"
+      },
+      {
+        "video_name": "906-17_l.mov",
+        "track_id": 3,
+        "ground_truth": "PROLONGED_STOPPING",
+        "predicted": "PROLONGED_STOPPING",
+        "correct": true,
+        "counts": {
+          "NORMAL": 74,
+          "PROLONGED_STOPPING": 46
+        },
+        "total_frames": 120,
+        "notes": "Track 3 moving STATIONARY (net_disp=2.0px, speed=0.4px/s)"
+      },
+      {
+        "video_name": "913-36_l.mov",
+        "track_id": 1,
+        "ground_truth": "NORMAL",
+        "predicted": "WRONG_DIRECTION",
+        "correct": false,
+        "counts": {
+          "NORMAL": 21,
+          "WRONG_DIRECTION": 4
+        },
+        "total_frames": 25,
+        "notes": "Track 1 moving UP_RIGHT (net_disp=39.5px, speed=41.2px/s)"
+      },
+      {
+        "video_name": "913-36_l.mov",
+        "track_id": 8,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "WRONG_DIRECTION",
+        "correct": true,
+        "counts": {
+          "NORMAL": 8,
+          "WRONG_DIRECTION": 18
+        },
+        "total_frames": 26,
+        "notes": "Track 8 moving LEFT (net_disp=69.6px, speed=64.4px/s)"
+      },
+      {
+        "video_name": "913-36_l.mov",
+        "track_id": 957,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 30
+        },
+        "total_frames": 30,
+        "notes": "Track 957 moving UP_RIGHT (net_disp=92.7px, speed=79.9px/s)"
+      }
+    ]
+  },
+  "improved": {
+    "metrics": {
+      "accuracy": 0.7692307692307693,
+      "macro_f1": 0.7301587301587301,
+      "confusion_matrix": [
+        [
+          6,
+          1,
+          0
+        ],
+        [
+          1,
+          3,
+          0
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ],
+      "per_class": {
+        "NORMAL": {
+          "TP": 6,
+          "FP": 1,
+          "FN": 1,
+          "TN": 5,
+          "prec": 0.8571428571428571,
+          "rec": 0.8571428571428571,
+          "f1": 0.8571428571428571
+        },
+        "WRONG_DIRECTION": {
+          "TP": 3,
+          "FP": 2,
+          "FN": 1,
+          "TN": 7,
+          "prec": 0.6,
+          "rec": 0.75,
+          "f1": 0.6666666666666665
+        },
+        "PROLONGED_STOPPING": {
+          "TP": 1,
+          "FP": 0,
+          "FN": 1,
+          "TN": 11,
+          "prec": 1.0,
+          "rec": 0.5,
+          "f1": 0.6666666666666666
+        }
+      }
+    },
+    "events": [
+      {
+        "video_name": "688-10_l.mov",
+        "track_id": 1,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 117
+        },
+        "total_frames": 117,
+        "notes": "Track 1 moving UP_RIGHT (net_disp=328.0px, speed=68.9px/s)"
+      },
+      {
+        "video_name": "688-10_l.mov",
+        "track_id": 1278,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 25
+        },
+        "total_frames": 25,
+        "notes": "Track 1278 moving UP_RIGHT (net_disp=64.7px, speed=64.7px/s)"
+      },
+      {
+        "video_name": "688-10_l.mov",
+        "track_id": 1249,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 28
+        },
+        "total_frames": 28,
+        "notes": "Track 1249 moving UP_RIGHT (net_disp=71.9px, speed=64.2px/s)"
+      },
+      {
+        "video_name": "861-13_70.mov",
+        "track_id": 3,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "NORMAL",
+        "correct": false,
+        "counts": {
+          "NORMAL": 69
+        },
+        "total_frames": 69,
+        "notes": "Track 3 moving LEFT (net_disp=38.3px, speed=14.1px/s)"
+      },
+      {
+        "video_name": "879-38_l.mov",
+        "track_id": 4,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 119,
+          "WRONG_DIRECTION": 1
+        },
+        "total_frames": 120,
+        "notes": "Track 4 moving DOWN_RIGHT (net_disp=234.9px, speed=49.3px/s)"
+      },
+      {
+        "video_name": "879-38_l.mov",
+        "track_id": 1,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "WRONG_DIRECTION",
+        "correct": true,
+        "counts": {
+          "NORMAL": 95,
+          "WRONG_DIRECTION": 25
+        },
+        "total_frames": 120,
+        "notes": "Track 1 moving LEFT (net_disp=282.5px, speed=59.4px/s)"
+      },
+      {
+        "video_name": "879-38_l.mov",
+        "track_id": 37,
+        "ground_truth": "PROLONGED_STOPPING",
+        "predicted": "WRONG_DIRECTION",
+        "correct": false,
+        "counts": {
+          "NORMAL": 64,
+          "WRONG_DIRECTION": 37
+        },
+        "total_frames": 101,
+        "notes": "Track 37 moving STATIONARY (net_disp=14.8px, speed=3.1px/s)"
+      },
+      {
+        "video_name": "906-17_l.mov",
+        "track_id": 4,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 118
+        },
+        "total_frames": 118,
+        "notes": "Track 4 moving UP_LEFT (net_disp=54.3px, speed=11.4px/s)"
+      },
+      {
+        "video_name": "906-17_l.mov",
+        "track_id": 1,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "WRONG_DIRECTION",
+        "correct": true,
+        "counts": {
+          "NORMAL": 70,
+          "WRONG_DIRECTION": 9
+        },
+        "total_frames": 79,
+        "notes": "Track 1 moving UP (net_disp=77.2px, speed=24.7px/s)"
+      },
+      {
+        "video_name": "906-17_l.mov",
+        "track_id": 3,
+        "ground_truth": "PROLONGED_STOPPING",
+        "predicted": "PROLONGED_STOPPING",
+        "correct": true,
+        "counts": {
+          "NORMAL": 74,
+          "PROLONGED_STOPPING": 46
+        },
+        "total_frames": 120,
+        "notes": "Track 3 moving STATIONARY (net_disp=2.0px, speed=0.4px/s)"
+      },
+      {
+        "video_name": "913-36_l.mov",
+        "track_id": 1,
+        "ground_truth": "NORMAL",
+        "predicted": "WRONG_DIRECTION",
+        "correct": false,
+        "counts": {
+          "NORMAL": 21,
+          "WRONG_DIRECTION": 4
+        },
+        "total_frames": 25,
+        "notes": "Track 1 moving UP_RIGHT (net_disp=39.5px, speed=41.2px/s)"
+      },
+      {
+        "video_name": "913-36_l.mov",
+        "track_id": 8,
+        "ground_truth": "WRONG_DIRECTION",
+        "predicted": "WRONG_DIRECTION",
+        "correct": true,
+        "counts": {
+          "NORMAL": 8,
+          "WRONG_DIRECTION": 18
+        },
+        "total_frames": 26,
+        "notes": "Track 8 moving LEFT (net_disp=69.6px, speed=64.4px/s)"
+      },
+      {
+        "video_name": "913-36_l.mov",
+        "track_id": 957,
+        "ground_truth": "NORMAL",
+        "predicted": "NORMAL",
+        "correct": true,
+        "counts": {
+          "NORMAL": 30
+        },
+        "total_frames": 30,
+        "notes": "Track 957 moving UP_RIGHT (net_disp=92.7px, speed=79.9px/s)"
+      }
+    ]
+  }
+}

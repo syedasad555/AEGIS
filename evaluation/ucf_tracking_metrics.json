@@ -1,0 +1,25 @@
+{
+  "tracker": "ByteTrack Stateful Kalman Filter (configs/bytetrack_crowd.yaml)",
+  "standard_mot_benchmarks": {
+    "MOT17-02": {
+      "mota": 0.2541,
+      "idf1": 0.4762,
+      "id_switches": 0,
+      "mostly_tracked_pct": 26.7,
+      "mostly_lost_pct": 36.7
+    },
+    "MOT20-01_Dense_Crowd": {
+      "mota": 0.6996,
+      "idf1": 0.7708,
+      "id_switches": 15,
+      "mostly_tracked_pct": 59.5,
+      "mostly_lost_pct": 9.5
+    }
+  },
+  "ucf_crowd_tracking_behavior": {
+    "total_pedestrian_tracks_observed": 2840,
+    "average_tracks_per_video": 167.1,
+    "kalman_buffer_frames": 60,
+    "match_threshold": 0.8
+  }
+}

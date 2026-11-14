@@ -214,6 +214,10 @@ class TrajectoryFeatureExtractor:
         if config.get("evacuation_corridor") or (config.get("zones") or {}).get("evacuation_routes"):
             self.zone_manager.corridor = self.corridor
         self.export_records: List[Dict[str, Any]] = []
+        self.track_obs_count: Dict[int, int] = defaultdict(int)
+        self.track_stationary_count: Dict[int, int] = defaultdict(int)
+        self.track_start_pos: Dict[int, Tuple[float, float]] = {}
+        self.track_last_pos: Dict[int, Tuple[float, float]] = {}
 
     def reset(self):
         self.dir_estimator.reset()
@@ -221,6 +225,10 @@ class TrajectoryFeatureExtractor:
         self.stop_start_timestamps.clear()
         self.moving_streaks.clear()
         self.export_records.clear()
+        self.track_obs_count.clear()
+        self.track_stationary_count.clear()
+        self.track_start_pos.clear()
+        self.track_last_pos.clear()
 
     def expire_stale_tracks(self, frame_idx: int):
         self.dir_estimator.expire_stale(frame_idx)
@@ -231,6 +239,8 @@ class TrajectoryFeatureExtractor:
         bbox: Tuple[float, float, float, float],
         frame_idx: int,
         fps: float = 30.0,
+        conf: Optional[float] = None,
+        is_detection: bool = True,
     ) -> Dict[str, Any]:
         x1, y1, x2, y2 = bbox
         raw_fx = float((x1 + x2) / 2.0)
@@ -240,7 +250,9 @@ class TrajectoryFeatureExtractor:
         timestamp = float(frame_idx / max(fps, 1.0))
 
         ground_x, ground_y = apply_homography((raw_fx, raw_fy), self.corridor.homography)
-        dir_info = self.dir_estimator.update(track_id, (ground_x, ground_y), frame_idx, timestamp)
+        dir_info = self.dir_estimator.update(
+            track_id, (ground_x, ground_y), frame_idx, timestamp, conf=conf, is_detection=is_detection
+        )
 
         direction = dir_info["direction"]
         # Increment stopping counter for STATIONARY *and* for UNKNOWN when the
@@ -280,6 +292,20 @@ class TrajectoryFeatureExtractor:
         history = list(self.dir_estimator.raw_hist[track_id])
         ema = self.dir_estimator.ema.get(track_id, (raw_fx, raw_fy))
 
+        self.track_obs_count[track_id] += 1
+        if track_id not in self.track_start_pos:
+            self.track_start_pos[track_id] = (raw_fx, raw_fy)
+        self.track_last_pos[track_id] = (raw_fx, raw_fy)
+
+        if dir_info.get("movement_status") == "STATIONARY":
+            self.track_stationary_count[track_id] += 1
+
+        total_obs = self.track_obs_count[track_id]
+        stat_obs = self.track_stationary_count[track_id]
+        stat_ratio = stat_obs / max(1, total_obs)
+        start_x, start_y = self.track_start_pos[track_id]
+        net_disp_px = math.hypot(raw_fx - start_x, raw_fy - start_y)
+
         features = {
             "track_id": int(track_id),
             "frame": int(frame_idx),
@@ -311,6 +337,14 @@ class TrajectoryFeatureExtractor:
             "movement_status": dir_info.get("movement_status", "UNKNOWN"),
             "observation_count": dir_info.get("observation_count", 0),
             "displacement_px": dir_info.get("displacement_px", 0.0),
+            "total_observations": total_obs,
+            "stationary_observations": stat_obs,
+            "stationary_ratio": round(stat_ratio, 3),
+            "net_displacement_px": round(net_disp_px, 2),
+            "start_foot": (round(start_x, 1), round(start_y, 1)),
+            "long_direction_vector": dir_info.get("long_direction_vector", dir_info.get("direction_vector", [0.0, 0.0])),
+            "curvature_deg": dir_info.get("curvature_deg", 0.0),
+            "is_curved_trajectory": bool(dir_info.get("is_curved_trajectory", False)),
         }
 
         self.export_records.append({

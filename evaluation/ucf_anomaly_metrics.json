@@ -1,0 +1,180 @@
+{
+  "dataset_name": "UCF Crowds Behavior Dataset (18 Videos)",
+  "optimal_configuration": {
+    "stopping_threshold_sec": 3.0,
+    "direction_min_disp_px": 9.0,
+    "wrong_way_sustain_frames": 3
+  },
+  "splits": {
+    "training_videos": [
+      "2018-6_70.mov",
+      "620-72_l.mov",
+      "341-46_l.mov",
+      "637-147_l.mov",
+      "913-35_l.mov",
+      "2082-3_70.mov",
+      "9019-13_l.mov",
+      "7399-1_70.mov"
+    ],
+    "validation_videos": [
+      "821-10_l.mov",
+      "913-37_l.mov",
+      "3687-18_70.mov",
+      "9-19_l.mov"
+    ],
+    "held_out_test_videos": [
+      "861-13_70.mov",
+      "688-10_l.mov",
+      "879-38_l.mov",
+      "906-17_l.mov",
+      "913-36_l.mov"
+    ]
+  },
+  "event_counts": {
+    "total_annotated_events": 49,
+    "normal_events": 19,
+    "wrong_direction_events": 15,
+    "prolonged_stopping_events": 15,
+    "held_out_test_events": 13
+  },
+  "held_out_test_metrics": {
+    "overall_accuracy": 0.6923,
+    "macro_f1": 0.6453,
+    "weighted_f1": 0.6963,
+    "per_class": {
+      "NORMAL": {
+        "TP": 5,
+        "FP": 1,
+        "FN": 2,
+        "TN": 5,
+        "accuracy": 0.7692,
+        "precision": 0.8333,
+        "recall": 0.7143,
+        "specificity": 0.8333,
+        "f1_score": 0.7692,
+        "far": 0.1667,
+        "mar": 0.2857,
+        "support": 7
+      },
+      "WRONG_DIRECTION": {
+        "TP": 3,
+        "FP": 2,
+        "FN": 1,
+        "TN": 7,
+        "accuracy": 0.7692,
+        "precision": 0.6,
+        "recall": 0.75,
+        "specificity": 0.7778,
+        "f1_score": 0.6667,
+        "far": 0.2222,
+        "mar": 0.25,
+        "support": 4
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 1,
+        "FP": 1,
+        "FN": 1,
+        "TN": 10,
+        "accuracy": 0.8462,
+        "precision": 0.5,
+        "recall": 0.5,
+        "specificity": 0.9091,
+        "f1_score": 0.5,
+        "far": 0.0909,
+        "mar": 0.5,
+        "support": 2
+      }
+    },
+    "confusion_matrix": [
+      [
+        5,
+        1,
+        1
+      ],
+      [
+        1,
+        3,
+        0
+      ],
+      [
+        0,
+        1,
+        1
+      ]
+    ],
+    "average_delays_sec": {
+      "WRONG_DIRECTION": 0.547,
+      "PROLONGED_STOPPING": 3.0
+    }
+  },
+  "consolidated_all_videos_metrics": {
+    "overall_accuracy": 0.7347,
+    "macro_f1": 0.7308,
+    "weighted_f1": 0.7333,
+    "per_class": {
+      "NORMAL": {
+        "TP": 16,
+        "FP": 7,
+        "FN": 3,
+        "TN": 23,
+        "accuracy": 0.7959,
+        "precision": 0.6957,
+        "recall": 0.8421,
+        "specificity": 0.7667,
+        "f1_score": 0.7619,
+        "far": 0.2333,
+        "mar": 0.1579,
+        "support": 19
+      },
+      "WRONG_DIRECTION": {
+        "TP": 10,
+        "FP": 2,
+        "FN": 5,
+        "TN": 32,
+        "accuracy": 0.8571,
+        "precision": 0.8333,
+        "recall": 0.6667,
+        "specificity": 0.9412,
+        "f1_score": 0.7407,
+        "far": 0.0588,
+        "mar": 0.3333,
+        "support": 15
+      },
+      "PROLONGED_STOPPING": {
+        "TP": 10,
+        "FP": 4,
+        "FN": 5,
+        "TN": 30,
+        "accuracy": 0.8163,
+        "precision": 0.7143,
+        "recall": 0.6667,
+        "specificity": 0.8824,
+        "f1_score": 0.6897,
+        "far": 0.1176,
+        "mar": 0.3333,
+        "support": 15
+      }
+    },
+    "confusion_matrix": [
+      [
+        16,
+        1,
+        2
+      ],
+      [
+        3,
+        10,
+        2
+      ],
+      [
+        4,
+        1,
+        10
+      ]
+    ],
+    "average_delays_sec": {
+      "WRONG_DIRECTION": 1.204,
+      "PROLONGED_STOPPING": 3.216
+    }
+  }
+}

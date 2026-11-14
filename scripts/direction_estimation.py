@@ -276,6 +276,9 @@ class DirectionEstimator:
         self.occlusion_keep = int(cfg.get("trajectory_occlusion_keep_frames", 15))
         self.max_jump_px = float(cfg.get("trajectory_max_displacement_px", 65.0))
         self.hysteresis_deg = float(cfg.get("direction_hysteresis_deg", 28.0))
+        self.enable_impulse_filter = bool(cfg.get("enable_impulse_filter", True))
+        self.enable_confidence_ema = bool(cfg.get("enable_confidence_ema", True))
+        self.enable_multi_horizon = bool(cfg.get("enable_multi_horizon", True))
         # max_step_px: per-step displacement limit on smoothed foot positions.
         # Default raised to 90px so fast-walking pedestrians are not permanently
         # classified UNKNOWN by the per-step sanity check in _estimate().
@@ -287,12 +290,16 @@ class DirectionEstimator:
         self.max_window_gap = int(cfg.get("direction_max_window_gap", self.max_frame_gap))
 
         self.raw_hist: Dict[int, Deque] = defaultdict(lambda: deque(maxlen=self.max_history))
+        self.raw_foot_buffer: Dict[int, Deque[Tuple[float, float]]] = defaultdict(lambda: deque(maxlen=3))
+        self.outlier_streak: Dict[int, int] = defaultdict(int)
         self.ema: Dict[int, Tuple[float, float]] = {}
         self.last_label: Dict[int, str] = {}
         self.last_seen: Dict[int, int] = {}
 
     def reset(self):
         self.raw_hist.clear()
+        self.raw_foot_buffer.clear()
+        self.outlier_streak.clear()
         self.ema.clear()
         self.last_label.clear()
         self.last_seen.clear()
@@ -301,6 +308,8 @@ class DirectionEstimator:
         stale = [t for t, f in self.last_seen.items() if frame_idx - f > self.occlusion_keep * 3]
         for t in stale:
             self.raw_hist.pop(t, None)
+            self.raw_foot_buffer.pop(t, None)
+            self.outlier_streak.pop(t, None)
             self.ema.pop(t, None)
             self.last_label.pop(t, None)
             self.last_seen.pop(t, None)
@@ -311,38 +320,68 @@ class DirectionEstimator:
         foot_xy: Tuple[float, float],
         frame_idx: int,
         timestamp_sec: float,
+        conf: Optional[float] = None,
+        is_detection: bool = True,
     ) -> Dict[str, Any]:
         raw_x, raw_y = float(foot_xy[0]), float(foot_xy[1])
-
-        if track_id in self.ema:
-            ex, ey = self.ema[track_id]
-            sx = self.ema_alpha * raw_x + (1.0 - self.ema_alpha) * ex
-            sy = self.ema_alpha * raw_y + (1.0 - self.ema_alpha) * ey
-        else:
-            sx, sy = raw_x, raw_y
-        self.ema[track_id] = (sx, sy)
-
         hist = self.raw_hist[track_id]
+
+        # Check for frame gap or teleportation / track reassignment jump first
+        is_jump = False
         if hist:
-            px, py, pf, _ = hist[-1]
+            last_entry = hist[-1]
+            px, py, pf = last_entry[0], last_entry[1], last_entry[2]
             gap = frame_idx - pf
-            jump = math.hypot(sx - px, sy - py)
-            if jump > self.max_jump_px and gap <= self.max_frame_gap:
+            raw_jump = math.hypot(raw_x - px, raw_y - py)
+            if raw_jump > self.max_jump_px and gap <= self.max_frame_gap:
                 hist.clear()
+                self.raw_foot_buffer[track_id].clear()
                 self.last_label.pop(track_id, None)
                 self.ema[track_id] = (raw_x, raw_y)
-                sx, sy = raw_x, raw_y
+                is_jump = True
             elif gap > self.max_frame_gap:
                 if gap > self.occlusion_keep:
                     hist.clear()
                     self.last_label.pop(track_id, None)
-                    self.ema[track_id] = (raw_x, raw_y)
-                    sx, sy = raw_x, raw_y
-                else:
-                    self.ema[track_id] = (raw_x, raw_y)
-                    sx, sy = raw_x, raw_y
+                self.raw_foot_buffer[track_id].clear()
+                self.ema[track_id] = (raw_x, raw_y)
+                is_jump = True
 
-        hist.append((sx, sy, frame_idx, float(timestamp_sec)))
+        # 1. Temporal impulse/median filtering for foot-point jitter rejection without directional delay
+        buf = self.raw_foot_buffer[track_id]
+        buf.append((raw_x, raw_y))
+        if self.enable_impulse_filter and not is_jump and len(buf) >= 3:
+            p2 = buf[-3]
+            p1 = buf[-2]
+            pred_x = 2.0 * p1[0] - p2[0]
+            pred_y = 2.0 * p1[1] - p2[1]
+            dev = math.hypot(raw_x - pred_x, raw_y - pred_y)
+            if dev > 20.0:
+                med_x = sorted([p[0] for p in buf])[1]
+                med_y = sorted([p[1] for p in buf])[1]
+            else:
+                med_x, med_y = raw_x, raw_y
+        else:
+            med_x, med_y = raw_x, raw_y
+
+        # 2. Confidence-weighted smoothing: higher confidence adapts faster, low confidence adapts conservatively
+        alpha = self.ema_alpha
+        if self.enable_confidence_ema and conf is not None:
+            try:
+                c_val = float(conf)
+                alpha = max(0.30, min(0.80, self.ema_alpha * (0.60 + 0.40 * c_val)))
+            except Exception:
+                alpha = self.ema_alpha
+
+        if not is_jump and track_id in self.ema:
+            ex, ey = self.ema[track_id]
+            sx = alpha * med_x + (1.0 - alpha) * ex
+            sy = alpha * med_y + (1.0 - alpha) * ey
+        else:
+            sx, sy = med_x, med_y
+        self.ema[track_id] = (sx, sy)
+
+        hist.append((sx, sy, frame_idx, float(timestamp_sec), bool(is_detection)))
         self.last_seen[track_id] = frame_idx
         return self._estimate(track_id, hist)
 
@@ -395,6 +434,50 @@ class DirectionEstimator:
         )
         consistency = disp / max(1.0, path_len)
 
+        # Multi-horizon evaluation for slow-walking / sustained tracks:
+        # Horizon 1 (Short): fast response for high-speed walkers (checked via is_fast_confirmed below).
+        # Horizon 2 (Medium): standard window (self.window = 12 frames).
+        # Horizon 3 (Long): extended horizon (24 to 32 frames) for slow locomotion in dense crowds.
+        # Catches slow walking (speed >= 5.0 px/s, disp >= 10.0 px, consistency >= 0.65).
+        # Stationary sway / jitter (< 4.5 px/s, disp < 10.0 px) remains correctly classified as STATIONARY.
+        long_dir_vec = None
+        curvature_deg = 0.0
+        is_curved = False
+
+        if len(hist) > len(recent):
+            ext_len = min(len(hist), max(self.window * 2, 28))
+            ext_recent = list(hist)[-ext_len:]
+            ext_dx = ext_recent[-1][0] - ext_recent[0][0]
+            ext_dy = ext_recent[-1][1] - ext_recent[0][1]
+            ext_disp = math.hypot(ext_dx, ext_dy)
+            ext_dt = max(1e-3, float(ext_recent[-1][3] - ext_recent[0][3]))
+            ext_speed = ext_disp / ext_dt
+            ext_path_len = sum(
+                math.hypot(ext_recent[i][0] - ext_recent[i - 1][0], ext_recent[i][1] - ext_recent[i - 1][1])
+                for i in range(1, len(ext_recent))
+            )
+            ext_consistency = ext_disp / max(1.0, ext_path_len)
+            long_dir_vec = [round(ext_dx, 2), round(ext_dy, 2)]
+
+            # Trajectory Curvature Recognition:
+            # Measure angular deviation between instantaneous short-term vector (6 frames) and macro-trend vector
+            short_w = min(len(hist), 6)
+            short_dx = ext_recent[-1][0] - ext_recent[-short_w][0]
+            short_dy = ext_recent[-1][1] - ext_recent[-short_w][1]
+            short_mag = math.hypot(short_dx, short_dy)
+            long_mag = math.hypot(ext_dx, ext_dy)
+            if short_mag > 2.0 and long_mag > 5.0:
+                dot = max(-1.0, min(1.0, (short_dx * ext_dx + short_dy * ext_dy) / (short_mag * long_mag)))
+                curvature_deg = round(float(math.degrees(math.acos(dot))), 1)
+                if curvature_deg > 35.0 and ext_consistency >= 0.50:
+                    is_curved = True
+
+            if disp < self.min_disp_px and ext_disp >= 10.0 and ext_speed >= 5.0 and ext_consistency >= 0.65:
+                recent = ext_recent
+                dx, dy = ext_dx, ext_dy
+                disp = ext_disp
+                consistency = ext_consistency
+
         # Adaptive observation window check:
         # If we have fewer than standard min_obs (e.g. 4 or 5 frames), only confirm
         # if the track shows clear, continuous directional displacement without zigzag/jitter.
@@ -428,15 +511,15 @@ class DirectionEstimator:
         )
 
         # Long-horizon check: if a track has >= 16 frames of history, genuine locomotion
-        # must show displacement growth over time. Jitter / sway stays bounded (< 18px, < 15px/s).
-        if not is_stationary and len(hist) >= 16 and not is_fast_confirmed:
+        # must show displacement growth over time. Jitter / sway stays bounded (< 10px, < 5px/s).
+        if self.enable_multi_horizon and not is_stationary and len(hist) >= 16 and not is_fast_confirmed:
             long_recent = list(hist)[-min(len(hist), 24):]
             long_dx = long_recent[-1][0] - long_recent[0][0]
             long_dy = long_recent[-1][1] - long_recent[0][1]
             long_disp = math.hypot(long_dx, long_dy)
             long_dt = max(0.1, float(long_recent[-1][3] - long_recent[0][3]))
             long_speed = long_disp / long_dt
-            if long_disp < 18.0 or long_speed < 15.0:
+            if long_disp < 10.0 or long_speed < 5.0:
                 is_stationary = True
 
         if is_stationary:
@@ -444,6 +527,9 @@ class DirectionEstimator:
             out["movement_status"] = "STATIONARY"
             out["direction_confidence"] = min(1.0, disp / max(self.min_disp_px, 1.0) * 0.3)
             out["direction_reliable"] = False
+            out["long_direction_vector"] = long_dir_vec or [0.0, 0.0]
+            out["curvature_deg"] = 0.0
+            out["is_curved_trajectory"] = False
             self.last_label[track_id] = "STATIONARY"
             return out
 
@@ -471,6 +557,9 @@ class DirectionEstimator:
             "direction_confidence": round(conf, 3),
             "direction_reliable": conf >= 0.45 and disp >= min_req_disp,
             "movement_status": "MOVING",
+            "long_direction_vector": long_dir_vec or out.get("direction_vector", [0.0, 0.0]),
+            "curvature_deg": curvature_deg,
+            "is_curved_trajectory": is_curved,
         })
         return out
 
