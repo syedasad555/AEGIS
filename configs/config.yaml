@@ -1,102 +1,45 @@
-yolo_model: weights/aegis_yolo11n_crowdhuman.pt
-detection_confidence: 0.08
-inference_imgsz: 800
-person_class_id: 0
-device: auto
-tracker_config: configs/bytetrack_crowd.yaml
-show_untracked_detections: false
-overlay:
-  show_track_labels: true
-  compact_labels: true
-  show_direction_in_label: false
-  show_direction_arrows: true
-  box_thickness_normal: 1
-  box_thickness_alert: 2
-  label_font_scale: 0.32
-  foot_marker_radius: 2
-  trail_max_points: 16
-  color_normal_bgr:
-  - 255
-  - 160
-  - 40
-  color_anomaly_bgr:
-  - 40
-  - 40
-  - 230
-  color_selection_bgr:
-  - 0
-  - 180
-  - 255
-far_camera_profile:
-  enabled: false
-  inference_imgsz: 960
-ucf_dataset_root: UCF_CrowdsDataset
-tiled_inference:
-  enabled: false
-  tile_width: 640
-  tile_height: 540
-  overlap_x: 0.2
-  overlap_y: 0.2
-  roi_corridor:
-  - 0.0
-  - 0.15
-  - 1.0
-  - 0.65
-  iou_nms_thresh: 0.5
-  mem_limit_mb: 650.0
-expected_evacuation_direction: UP
-stationary_speed_threshold: 0.6
-prolonged_stopping_frames: 45
-direction_window_frames: 12
-direction_ema_alpha: 0.6
-direction_min_displacement_px: 8.0
-direction_fast_displacement_px: 9.0
-direction_min_speed_px_sec: 5.0
-direction_min_observations: 6
-direction_min_fast_observations: 4
-direction_hysteresis_deg: 28.0
-direction_diagnostic_mode: false
-direction_detection:
-  max_sector_distance_normal: 1
-  angular_tolerance_deg: 45.0
-  wrong_way_sustain_frames: 3
-  recovery_frames: 4
-  cooldown_sec: 4.0
-  require_in_corridor: false
-  min_confidence: 0.45
-stopping_detection:
-  enabled: true
-  threshold_sec: 10.0
-  min_frames: 45
-  critical_sec: 20.0
 adaptive_frame_skipping:
-  enabled: true
-  empty_scene_max_skip: 15
-  normal_flow_max_skip: 4
-  suspect_anomaly_max_skip: 1
   active_anomaly_max_skip: 2
+  empty_scene_max_skip: 15
+  enabled: true
+  normal_flow_max_skip: 4
   prolonged_stopping_max_skip: 3
+  suspect_anomaly_max_skip: 1
 anomaly_history_max: 200
-trajectory_history_max: 24
-trajectory_max_displacement_px: 65.0
-trajectory_max_frame_gap: 10
-trajectory_min_history_for_direction: 8
-trajectory_occlusion_keep_frames: 15
-trajectory_export_format: json
-show_cctv_window: true
+detection_confidence: 0.08
+device: auto
+direction_detection:
+  angular_tolerance_deg: 45.0
+  cooldown_sec: 4.0
+  max_sector_distance_normal: 1
+  min_confidence: 0.45
+  recovery_frames: 4
+  require_in_corridor: false
+  wrong_way_sustain_frames: 2
+direction_diagnostic_mode: false
+direction_ema_alpha: 0.6
+direction_fast_displacement_px: 8.0
+direction_hysteresis_deg: 28.0
+direction_min_displacement_px: 8.0
+direction_min_fast_observations: 4
+direction_min_observations: 6
+direction_min_speed_px_sec: 5.0
+direction_window_frames: 12
 draw_trajectories: true
 draw_zones: true
-websocket_host: 127.0.0.1
-websocket_port: 8765
-http_server_port: 8080
 evacuation_corridor:
-  id: corridor_main
-  name: Main Evacuation Corridor
-  expected_direction: LEFT
   color:
   - 40
   - 200
   - 80
+  expected_direction: LEFT
+  flow_line:
+  - - 80
+    - 375
+  - - 1170
+    - 375
+  id: corridor_main
+  name: Main Evacuation Corridor
   polygon:
   - - 50
     - 100
@@ -106,9 +49,66 @@ evacuation_corridor:
     - 650
   - - 50
     - 650
-  flow_line:
-  - - 80
-    - 375
-  - - 1170
-    - 375
+expected_evacuation_direction: LEFT
+far_camera_profile:
+  enabled: false
+  inference_imgsz: 960
+http_server_port: 8080
+inference_imgsz: 800
+overlay:
+  box_thickness_alert: 2
+  box_thickness_normal: 1
+  color_anomaly_bgr:
+  - 40
+  - 40
+  - 230
+  color_normal_bgr:
+  - 255
+  - 160
+  - 40
+  color_selection_bgr:
+  - 0
+  - 180
+  - 255
+  compact_labels: true
+  foot_marker_radius: 2
+  label_font_scale: 0.32
+  show_direction_arrows: true
+  show_direction_in_label: false
+  show_track_labels: true
+  trail_max_points: 16
+person_class_id: 0
+prolonged_stopping_frames: 45
+show_cctv_window: true
+show_untracked_detections: false
+stationary_speed_threshold: 0.6
+stopping_detection:
+  critical_sec: 20.0
+  enabled: true
+  min_frames: 45
+  threshold_sec: 1.5
+tiled_inference:
+  enabled: false
+  iou_nms_thresh: 0.5
+  mem_limit_mb: 650.0
+  overlap_x: 0.2
+  overlap_y: 0.2
+  roi_corridor:
+  - 0.0
+  - 0.15
+  - 1.0
+  - 0.65
+  tile_height: 540
+  tile_width: 640
+tracker_config: configs/bytetrack_crowd.yaml
+trajectory_export_format: json
+trajectory_history_max: 24
+trajectory_max_displacement_px: 65.0
+trajectory_max_frame_gap: 10
+trajectory_min_history_for_direction: 8
+trajectory_occlusion_keep_frames: 15
+ucf_dataset_root: UCF_CrowdsDataset
+websocket_host: 127.0.0.1
+websocket_port: 8765
+yolo_model: weights/aegis_yolo11n_crowdhuman.pt
 zones: {}

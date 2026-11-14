@@ -1,0 +1,4 @@
+Profile,Image Size,Confidence,NMS IoU,TP,FP,FN,Precision,Recall,F1-Score,Latency (ms),FPS,Recall (Small),Recall (Medium),Recall (Large)
+Performance,640,0.22,0.5,252,50,179,0.8344,0.5847,0.6876,399.01,2.5,0.2857,0.5697,0.7736
+Balanced,800,0.15,0.55,267,65,164,0.8042,0.6195,0.6999,112.38,8.9,0.25,0.5902,0.805
+Accuracy,960,0.1,0.55,280,90,151,0.7568,0.6497,0.6991,140.82,7.1,0.2857,0.6557,0.7862

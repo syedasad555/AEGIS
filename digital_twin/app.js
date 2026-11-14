@@ -17,16 +17,30 @@ class DigitalTwinApp {
   constructor() {
     // Initial Video Selection Screen elements
     this.videoSelectionScreen = document.getElementById('videoSelectionScreen');
+    this.dropZone = document.getElementById('dropZone');
+    this.dropzoneEmpty = document.getElementById('dropzoneEmpty');
+    this.browseFilesBtn = document.getElementById('browseFilesBtn');
+    this.fileDetailsCard = document.getElementById('fileDetailsCard');
+    this.fileFormatBadge = document.getElementById('fileFormatBadge');
+    this.fileSizeBadge = document.getElementById('fileSizeBadge');
+    this.fileStatusIndicator = document.getElementById('fileStatusIndicator');
+    this.removeFileBtn = document.getElementById('removeFileBtn');
     this.presetCards = document.querySelectorAll('.preset-card');
     this.videoFileInput = document.getElementById('videoFileInput');
     this.selectedFileName = document.getElementById('selectedFileName');
     this.customPathInput = document.getElementById('customPathInput');
     this.validatePathBtn = document.getElementById('validatePathBtn');
     this.initialDirectionSelect = document.getElementById('initialDirectionSelect');
+    this.initialDirectionGroup = document.getElementById('initialDirectionGroup');
     this.selectionValidationMsg = document.getElementById('selectionValidationMsg');
     this.startAnalysisBtn = document.getElementById('startAnalysisBtn');
     this.activeVideoName = document.getElementById('activeVideoName');
     this.changeVideoBtn = document.getElementById('changeVideoBtn');
+
+    // Digital Twin Filter State ('ALL' | 'ANOMALIES')
+    this.twinFilter = 'ALL';
+    this.twinFilterAllBtn = document.getElementById('twinFilterAll');
+    this.twinFilterAnomaliesBtn = document.getElementById('twinFilterAnomalies');
 
     // Left panel elements (CCTV feed)
     this.cctvContainer = document.getElementById('cctvContainer');
@@ -251,63 +265,70 @@ class DigitalTwinApp {
   }
 
   setupSelectionListeners() {
-    // Preset Scenario Selection Cards
-    this.presetCards.forEach((card) => {
-      card.addEventListener('click', () => {
-        this.presetCards.forEach((c) => c.classList.remove('active'));
-        card.classList.add('active');
-
-        this.selectedVideoPath = card.getAttribute('data-video');
-        this.selectedVideoName = this.selectedVideoPath.split('/').pop();
-        const preferredDir = this.coerceAdminDirection(card.getAttribute('data-dir') || 'LEFT');
-        this.selectedDirection = preferredDir;
-
-        if (this.initialDirectionSelect) {
-          this.initialDirectionSelect.value = preferredDir;
-        }
-        if (this.directionSelect) {
-          this.directionSelect.value = preferredDir;
-        }
-        if (this.selectedFileName) {
-          this.selectedFileName.textContent = `Preset selected: ${this.selectedVideoName}`;
-        }
-        this.hideValidationMsg();
+    // Browse Files button triggers hidden file input
+    if (this.browseFilesBtn && this.videoFileInput) {
+      this.browseFilesBtn.addEventListener('click', () => {
+        this.videoFileInput.click();
       });
-    });
+    }
+
+    // Drag and drop support on dropZone
+    if (this.dropZone) {
+      ['dragenter', 'dragover'].forEach((eventName) => {
+        this.dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.dropZone.classList.add('drag-active');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach((eventName) => {
+        this.dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.dropZone.classList.remove('drag-active');
+        }, false);
+      });
+
+      this.dropZone.addEventListener('drop', async (e) => {
+        const dt = e.dataTransfer;
+        const files = dt ? dt.files : null;
+        if (files && files.length > 0) {
+          await this.handleFileUpload(files[0]);
+        }
+      });
+    }
 
     // Custom File Input
     if (this.videoFileInput) {
       this.videoFileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        await this.handleFileUpload(file);
+        this.videoFileInput.value = '';
+      });
+    }
 
-        this.selectedFileName.textContent = `Uploading ${file.name}...`;
-        this.showValidationMsg(`Uploading ${file.name} to server...`, 'info');
+    // Remove File button to reset selection
+    if (this.removeFileBtn) {
+      this.removeFileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.resetFileSelection();
+      });
+    }
 
-        try {
-          const res = await fetch(`/api/upload_video?filename=${encodeURIComponent(file.name)}`, {
-            method: 'POST',
-            body: file
-          });
-          const data = await res.json();
-
-          if (data.status === 'ok' && data.valid) {
-            this.selectedVideoPath = data.path;
-            this.selectedVideoName = data.filename;
-            this.presetCards.forEach((c) => c.classList.remove('active'));
-            if (this.selectedFileName) {
-              this.selectedFileName.textContent = `${data.filename} (${data.width}×${data.height}, ${data.frames} frames)`;
-            }
-            this.showValidationMsg(`✓ Video uploaded and verified: ${data.filename} (${data.width}×${data.height}, ${data.fps} FPS)`, 'success');
-          } else {
-            this.showValidationMsg(`✕ Upload failed: ${data.error || 'Invalid video format'}`, 'error');
-            this.selectedFileName.textContent = 'Upload failed. Select a preset or another file.';
-          }
-        } catch (err) {
-          this.showValidationMsg(`✕ Upload error: ${err.message}`, 'error');
-        } finally {
-          this.videoFileInput.value = '';
-        }
+    // Initial Direction Buttons (LEFT, RIGHT, UP, DOWN)
+    if (this.initialDirectionGroup) {
+      const dirBtns = this.initialDirectionGroup.querySelectorAll('.dir-option-btn');
+      dirBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          dirBtns.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          const d = this.coerceAdminDirection(btn.getAttribute('data-dir') || 'LEFT');
+          this.selectedDirection = d;
+          if (this.initialDirectionSelect) this.initialDirectionSelect.value = d;
+          if (this.directionSelect) this.directionSelect.value = d;
+        });
       });
     }
 
@@ -330,13 +351,15 @@ class DigitalTwinApp {
           const data = await res.json();
 
           if (data.valid) {
-            this.selectedVideoPath = data.path;
-            this.selectedVideoName = data.filename;
-            this.presetCards.forEach((c) => c.classList.remove('active'));
-            if (this.selectedFileName) {
-              this.selectedFileName.textContent = `${data.filename} (${data.width}×${data.height}, ${data.total_frames} frames)`;
-            }
-            this.showValidationMsg(`✓ Video verified: ${data.filename} (${data.width}×${data.height}, ${data.fps} FPS, ${data.total_frames} frames)`, 'success');
+            const fname = data.filename || path.split(/[\/\\]/).pop();
+            const fmt = (fname.split('.').pop() || 'VIDEO').toUpperCase();
+            this.setFileSelected({
+              filename: fname,
+              path: data.path,
+              format: fmt,
+              sizeText: `${data.total_frames || data.frames || 0} frames (${data.width}×${data.height})`
+            });
+            this.showValidationMsg(`✓ Video verified: ${fname} (${data.width}×${data.height}, ${data.fps} FPS, ${data.total_frames || data.frames} frames)`, 'success');
           } else {
             this.showValidationMsg(`✕ Cannot open video: ${data.error}`, 'error');
           }
@@ -362,6 +385,12 @@ class DigitalTwinApp {
         if (this.directionSelect) {
           this.directionSelect.value = this.selectedDirection;
         }
+        if (this.initialDirectionGroup) {
+          const dirBtns = this.initialDirectionGroup.querySelectorAll('.dir-option-btn');
+          dirBtns.forEach((btn) => {
+            btn.classList.toggle('active', btn.getAttribute('data-dir') === this.selectedDirection);
+          });
+        }
       });
     }
 
@@ -371,6 +400,97 @@ class DigitalTwinApp {
         await this.startAnalysis();
       });
     }
+
+    // Digital Twin Filter Toggles (ALL vs ANOMALIES ONLY)
+    if (this.twinFilterAllBtn) {
+      this.twinFilterAllBtn.addEventListener('click', () => {
+        this.setTwinFilter('ALL');
+      });
+    }
+    if (this.twinFilterAnomaliesBtn) {
+      this.twinFilterAnomaliesBtn.addEventListener('click', () => {
+        this.setTwinFilter('ANOMALIES');
+      });
+    }
+  }
+
+  setTwinFilter(mode) {
+    this.twinFilter = (mode === 'ANOMALIES') ? 'ANOMALIES' : 'ALL';
+    if (this.twinFilterAllBtn && this.twinFilterAnomaliesBtn) {
+      if (this.twinFilter === 'ANOMALIES') {
+        this.twinFilterAnomaliesBtn.classList.add('active');
+        this.twinFilterAllBtn.classList.remove('active');
+      } else {
+        this.twinFilterAllBtn.classList.add('active');
+        this.twinFilterAnomaliesBtn.classList.remove('active');
+      }
+    }
+    // Redraw digital twin immediately with current pedestrians
+    this.drawDigitalTwinMap(this.currentPedestrians, 1, null, this.selectedDirection);
+  }
+
+  async handleFileUpload(file) {
+    if (!file) return;
+    const fname = file.name;
+    const fmt = (fname.split('.').pop() || '').toUpperCase();
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    this.showValidationMsg(`Uploading ${fname} (${sizeMb} MB)...`, 'info');
+
+    try {
+      const res = await fetch(`/api/upload_video?filename=${encodeURIComponent(fname)}`, {
+        method: 'POST',
+        body: file
+      });
+      const data = await res.json();
+
+      if (data.status === 'ok' && data.valid) {
+        this.setFileSelected({
+          filename: data.filename || fname,
+          path: data.path,
+          format: fmt || 'VIDEO',
+          sizeText: `${sizeMb} MB (${data.width}×${data.height})`
+        });
+        this.showValidationMsg(`✓ Video uploaded and verified: ${data.filename || fname} (${data.width}×${data.height}, ${data.fps} FPS)`, 'success');
+      } else {
+        this.showValidationMsg(`✕ Upload failed: ${data.error || 'Invalid video format'}`, 'error');
+      }
+    } catch (err) {
+      this.showValidationMsg(`✕ Upload error: ${err.message}`, 'error');
+    }
+  }
+
+  setFileSelected(meta) {
+    this.selectedVideoPath = meta.path;
+    this.selectedVideoName = meta.filename;
+
+    if (this.selectedFileName) {
+      this.selectedFileName.textContent = meta.filename;
+    }
+    if (this.fileFormatBadge) {
+      this.fileFormatBadge.textContent = meta.format;
+    }
+    if (this.fileSizeBadge) {
+      this.fileSizeBadge.textContent = meta.sizeText;
+    }
+    if (this.dropzoneEmpty) {
+      this.dropzoneEmpty.style.display = 'none';
+    }
+    if (this.fileDetailsCard) {
+      this.fileDetailsCard.style.display = 'block';
+    }
+    if (this.customPathInput) {
+      this.customPathInput.value = meta.path;
+    }
+  }
+
+  resetFileSelection() {
+    this.selectedVideoPath = '';
+    this.selectedVideoName = '';
+    if (this.videoFileInput) this.videoFileInput.value = '';
+    if (this.customPathInput) this.customPathInput.value = '';
+    if (this.dropzoneEmpty) this.dropzoneEmpty.style.display = 'flex';
+    if (this.fileDetailsCard) this.fileDetailsCard.style.display = 'none';
+    this.hideValidationMsg();
   }
 
   showValidationMsg(text, type = 'info') {
@@ -1105,7 +1225,21 @@ class DigitalTwinApp {
     // Colour legend
     this.drawMapLegendAndFootnote(ctx, w, h);
 
-    if (!pedestrians || pedestrians.length === 0) return;
+    // Presentation Filter: in ANOMALIES mode, display only pedestrians whose backend visual_state === 'anomaly'
+    const activePedestrians = (this.twinFilter === 'ANOMALIES')
+      ? (pedestrians || []).filter(p => p && p.visual_state === 'anomaly')
+      : (pedestrians || []);
+
+    if (this.twinFilter === 'ANOMALIES') {
+      ctx.save();
+      ctx.font = '600 11px var(--font-mono, monospace)';
+      ctx.fillStyle = activePedestrians.length > 0 ? '#ef4444' : '#64748b';
+      ctx.textAlign = 'right';
+      ctx.fillText(`FILTER: ANOMALIES ONLY (${activePedestrians.length} ACTIVE)`, w - 16, 24);
+      ctx.restore();
+    }
+
+    if (!activePedestrians || activePedestrians.length === 0) return;
 
     // 7. Trajectories first (below pedestrian marker dots)
     const videoRefW = this.videoRefW || 640;
@@ -1119,7 +1253,7 @@ class DigitalTwinApp {
     ctx.scale(this.mapZoom, this.mapZoom);
     ctx.translate(-w / 2, -h / 2);
 
-    for (const p of pedestrians) {
+    for (const p of activePedestrians) {
       const isAnomaly = this.isConfirmedAnomaly(p);
       const isSelected = (this.selectedTrackId !== null && p.track_id === this.selectedTrackId);
       const trail = p.trajectory;
@@ -1187,20 +1321,20 @@ class DigitalTwinApp {
 
     // 8. Render Pedestrian Marker Dots & Anti-Collision Tags
     const occupiedLabelRects = [];
-    const sortedPedestrians = [...pedestrians].sort((a, b) => {
+    const sortedPedestrians = [...activePedestrians].sort((a, b) => {
       const ya = (a.bbox ? a.bbox[1] : (a.y || 0));
       const yb = (b.bbox ? b.bbox[1] : (b.y || 0));
       return ya - yb;
     });
 
     // Zoom-dependent label density: show all markers; sparse labels when zoomed out
-    const showAllLabels = this.mapZoom >= 1.35 || pedestrians.length <= 40;
+    const showAllLabels = this.mapZoom >= 1.35 || activePedestrians.length <= 40;
     const labelPriority = [...sortedPedestrians].sort((a, b) => {
       const sa = this.isConfirmedAnomaly(a) || a.track_id === this.selectedTrackId ? 1 : 0;
       const sb = this.isConfirmedAnomaly(b) || b.track_id === this.selectedTrackId ? 1 : 0;
       return sb - sa;
     });
-    const maxLabels = showAllLabels ? pedestrians.length : Math.min(24, pedestrians.length);
+    const maxLabels = showAllLabels ? activePedestrians.length : Math.min(24, activePedestrians.length);
     const labelIds = new Set(labelPriority.slice(0, maxLabels).map((p) => p.track_id));
 
     for (const p of sortedPedestrians) {

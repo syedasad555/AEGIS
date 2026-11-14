@@ -1,0 +1,40 @@
+{
+  "MOT17-02": {
+    "sequence": "MOT17-02",
+    "frames_evaluated": 100,
+    "ground_truth_instances": 2428,
+    "predicted_instances": 1503,
+    "true_positives": 1060,
+    "false_positives": 443,
+    "false_negatives": 1368,
+    "id_switches": 0,
+    "mota": 0.2541,
+    "idf1": 0.4762,
+    "total_gt_trajectories": 30,
+    "mostly_tracked": 8,
+    "mostly_lost": 11,
+    "mt_ratio": 0.267,
+    "ml_ratio": 0.367,
+    "tracking_precision": 0.7053,
+    "tracking_recall": 0.4366
+  },
+  "MOT20-01": {
+    "sequence": "MOT20-01",
+    "frames_evaluated": 100,
+    "ground_truth_instances": 3778,
+    "predicted_instances": 3472,
+    "true_positives": 3065,
+    "false_positives": 407,
+    "false_negatives": 713,
+    "id_switches": 15,
+    "mota": 0.6996,
+    "idf1": 0.7708,
+    "total_gt_trajectories": 42,
+    "mostly_tracked": 25,
+    "mostly_lost": 4,
+    "mt_ratio": 0.595,
+    "ml_ratio": 0.095,
+    "tracking_precision": 0.8828,
+    "tracking_recall": 0.8113
+  }
+}

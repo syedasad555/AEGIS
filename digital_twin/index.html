@@ -23,69 +23,105 @@
           </svg>
         </div>
         <div>
-          <h2>AEGIS — Choose a Video</h2>
-          <p class="selection-subtitle">Pick a scenario or upload a clip to start person tracking and alerts.</p>
+          <h2>AEGIS · Video Source Selection</h2>
+          <p class="selection-subtitle">Upload surveillance footage or load a server video to initialize context-aware evacuation monitoring.</p>
         </div>
       </div>
 
-      <!-- Presets Section -->
-      <div class="section-label">SCENARIOS</div>
-      <div class="preset-grid">
-        <div class="preset-card active" data-video="assets/evacuation_test_corridor.avi" data-dir="LEFT" data-format="AVI">
-          <div class="preset-badge badge-density">CORRIDOR TEST</div>
-          <div class="preset-title">Corridor Evacuation Test</div>
-          <div class="preset-file">evacuation_test_corridor.avi</div>
-          <div class="preset-meta">640×480 • 30 FPS • Multi-Track Corridor</div>
-          <div class="preset-desc">Multi-pedestrian corridor evacuation flow testing stationary detection, counterflow, and twin alignment.</div>
-        </div>
+      <!-- Drag & Drop Upload Zone -->
+      <div class="upload-zone-wrapper">
+        <div id="dropZone" class="upload-dropzone">
+          <input type="file" id="videoFileInput" accept=".mp4,.avi,.mov,.mkv,.webm" style="display: none;">
+          <div class="dropzone-content" id="dropzoneEmpty">
+            <div class="dropzone-icon">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <div class="dropzone-title">Drag &amp; drop surveillance video here</div>
+            <div class="dropzone-subtitle">or select a file from your workstation</div>
+            <button type="button" id="browseFilesBtn" class="btn btn-secondary btn-browse">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Browse Files
+            </button>
+            <div class="supported-formats-pill">
+              <span class="fmt-tag">MP4</span>
+              <span class="fmt-tag">AVI</span>
+              <span class="fmt-tag">MOV</span>
+              <span class="fmt-tag">MKV</span>
+              <span class="fmt-tag">WEBM</span>
+            </div>
+          </div>
 
-        <div class="preset-card" data-video="assets/intrusion.mp4" data-dir="RIGHT" data-format="MP4">
-          <div class="preset-badge badge-perimeter">PERIMETER</div>
-          <div class="preset-title">Perimeter Intrusion</div>
-          <div class="preset-file">intrusion.mp4</div>
-          <div class="preset-meta">1920×1080 • 25 FPS • 263 frames</div>
-          <div class="preset-desc">Continuous pedestrian stream traversing adjacent to a designated restricted security perimeter.</div>
+          <!-- File Details Preview Card (Visible when video is selected) -->
+          <div class="file-details-card" id="fileDetailsCard" style="display: none;">
+            <div class="file-details-body">
+              <div class="file-icon-wrap">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="23 7 16 12 23 17 23 7"/>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+              </div>
+              <div class="file-meta-main">
+                <div class="file-name" id="selectedFileName">evacuation_test_corridor.avi</div>
+                <div class="file-meta-sub">
+                  <span class="file-format-badge" id="fileFormatBadge">AVI</span>
+                  <span class="file-size" id="fileSizeBadge">-- MB</span>
+                  <span class="file-status-indicator" id="fileStatusIndicator">
+                    <span class="status-dot-sm"></span> Ready for analysis
+                  </span>
+                </div>
+              </div>
+              <button type="button" id="removeFileBtn" class="btn-remove-file" title="Remove or change video">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div class="preset-card" data-video="assets/running.mp4" data-dir="RIGHT" data-format="MP4">
-          <div class="preset-badge badge-evac">EVACUATION</div>
-          <div class="preset-title">Evacuation Movement</div>
-          <div class="preset-file">running.mp4</div>
-          <div class="preset-meta">632×480 • 30 FPS • 212 frames</div>
-          <div class="preset-desc">High-speed movement and emergency corridor directional flow with stationary bystanders.</div>
-        </div>
-
       </div>
 
-      <!-- Custom Video Selection Section -->
-      <div class="section-label">OR UPLOAD (MP4, AVI, MOV, MKV)</div>
-      <div class="custom-video-box">
-        <div class="custom-row">
-          <label class="custom-file-btn" for="videoFileInput">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Upload Video
-            <input type="file" id="videoFileInput" accept=".mp4,.avi,.mov,.mkv,.webm" style="display: none;">
-          </label>
-          <span class="file-name-display" id="selectedFileName">Preset selected: evacuation_test_corridor.avi</span>
+      <!-- Server Path Fallback Input -->
+      <div class="server-path-card">
+        <div class="server-path-header">
+          <span class="section-label-inline">OR SPECIFY SERVER PATH</span>
         </div>
         <div class="custom-path-row">
-          <label for="customPathInput" class="control-label" style="min-width: 90px;">Path:</label>
-          <input type="text" id="customPathInput" class="form-control" placeholder="e.g. assets/evacuation_test_corridor.avi">
-          <button id="validatePathBtn" class="btn btn-secondary">Verify</button>
+          <input type="text" id="customPathInput" class="form-control" placeholder="e.g. assets/evacuation_test_corridor.avi" value="assets/evacuation_test_corridor.avi">
+          <button id="validatePathBtn" class="btn btn-secondary">Load Path</button>
         </div>
       </div>
 
       <!-- Evacuation Settings -->
-      <div class="section-label">EXIT FLOW DIRECTION</div>
-      <div class="flow-config-row">
-        <div class="flow-item">
-          <label class="control-label">People should move:</label>
-          <select id="initialDirectionSelect" class="form-control">
-            <option value="LEFT">LEFT</option>
-            <option value="RIGHT">RIGHT</option>
-            <option value="UP">UP</option>
-            <option value="DOWN">DOWN</option>
-          </select>
+      <div class="flow-direction-section">
+        <div class="section-label">EXPECTED EVACUATION FLOW</div>
+        <div class="flow-config-row">
+          <div class="flow-item">
+            <div class="direction-btn-group" id="initialDirectionGroup">
+              <button type="button" class="dir-option-btn active" data-dir="LEFT">
+                <span class="dir-arrow">←</span> LEFT
+              </button>
+              <button type="button" class="dir-option-btn" data-dir="RIGHT">
+                <span class="dir-arrow">→</span> RIGHT
+              </button>
+              <button type="button" class="dir-option-btn" data-dir="UP">
+                <span class="dir-arrow">↑</span> UP
+              </button>
+              <button type="button" class="dir-option-btn" data-dir="DOWN">
+                <span class="dir-arrow">↓</span> DOWN
+              </button>
+            </div>
+            <select id="initialDirectionSelect" class="form-control" style="display: none;">
+              <option value="LEFT" selected>LEFT</option>
+              <option value="RIGHT">RIGHT</option>
+              <option value="UP">UP</option>
+              <option value="DOWN">DOWN</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -111,8 +147,8 @@
         </svg>
       </div>
       <div class="brand-text">
-        <div class="app-title">AEGIS · Evacuation Console</div>
-        <div class="app-subtitle">Live person tracking &amp; alerts</div>
+        <div class="app-title">AEGIS · Command Centre</div>
+        <div class="app-subtitle">Evacuation surveillance &amp; anomaly detection</div>
       </div>
     </div>
 
@@ -141,11 +177,7 @@
         <span id="pauseIcon">⏸</span> <span id="pauseText">Pause</span>
       </button>
 
-      <button id="openZonesModalBtn" class="header-btn" title="Advanced settings: zones &amp; rules">
-        <span>⚙</span> <span>Advanced</span>
-      </button>
-
-      <button id="changeVideoBtn" class="header-btn header-btn-secondary" title="Change video scenario">
+      <button id="changeVideoBtn" class="header-btn header-btn-secondary" title="Change video source">
         <span>⟲</span> <span>Change Video</span>
       </button>
 
@@ -270,10 +302,18 @@
         <div class="viewport-title-group">
           <span class="panel-indicator indicator-twin"></span>
           <span class="viewport-title">Digital Twin</span>
-          <span class="viewport-tag">Approximate map</span>
+          <span class="viewport-tag">2D Spatial Plan</span>
         </div>
-        <div class="viewport-meta">
-          <span class="meta-item">Uncalibrated camera→plan projection</span>
+        <!-- Digital Twin Presentation Filter (All vs Anomalies Only) -->
+        <div class="twin-filter-toolbar">
+          <div class="twin-filter-group" role="group" aria-label="Digital Twin Display Filter">
+            <button type="button" id="twinFilterAll" class="twin-filter-btn active" title="Display all tracked pedestrians on Digital Twin">
+              <span class="filter-dot filter-dot-all"></span> ALL PEDESTRIANS
+            </button>
+            <button type="button" id="twinFilterAnomalies" class="twin-filter-btn" title="Display only anomalous pedestrians on Digital Twin">
+              <span class="filter-dot filter-dot-anomaly"></span> ANOMALIES ONLY
+            </button>
+          </div>
         </div>
       </div>
       <div class="viewport-body">

@@ -1,0 +1,104 @@
+{
+  "video_fps": 30.0,
+  "speeds_benchmarked": [
+    {
+      "requested_speed": 0.25,
+      "achieved_speed": 0.16,
+      "speed_accuracy_pct": 62.2,
+      "effective_fps": 4.7,
+      "processing_fps": 4.7,
+      "frames_processed": 40,
+      "frames_skipped": 0,
+      "skip_ratio_pct": 0.0,
+      "mean_inference_latency_ms": 207.3
+    },
+    {
+      "requested_speed": 0.5,
+      "achieved_speed": 0.37,
+      "speed_accuracy_pct": 74.9,
+      "effective_fps": 11.2,
+      "processing_fps": 5.8,
+      "frames_processed": 21,
+      "frames_skipped": 20,
+      "skip_ratio_pct": 48.8,
+      "mean_inference_latency_ms": 163.3
+    },
+    {
+      "requested_speed": 0.75,
+      "achieved_speed": 0.52,
+      "speed_accuracy_pct": 69.3,
+      "effective_fps": 15.6,
+      "processing_fps": 5.5,
+      "frames_processed": 14,
+      "frames_skipped": 26,
+      "skip_ratio_pct": 65.0,
+      "mean_inference_latency_ms": 168.0
+    },
+    {
+      "requested_speed": 1.0,
+      "achieved_speed": 0.67,
+      "speed_accuracy_pct": 66.6,
+      "effective_fps": 20.0,
+      "processing_fps": 5.4,
+      "frames_processed": 11,
+      "frames_skipped": 30,
+      "skip_ratio_pct": 73.2,
+      "mean_inference_latency_ms": 171.0
+    },
+    {
+      "requested_speed": 1.25,
+      "achieved_speed": 0.73,
+      "speed_accuracy_pct": 58.7,
+      "effective_fps": 22.0,
+      "processing_fps": 5.9,
+      "frames_processed": 11,
+      "frames_skipped": 30,
+      "skip_ratio_pct": 73.2,
+      "mean_inference_latency_ms": 155.6
+    },
+    {
+      "requested_speed": 1.5,
+      "achieved_speed": 0.81,
+      "speed_accuracy_pct": 54.3,
+      "effective_fps": 24.4,
+      "processing_fps": 5.4,
+      "frames_processed": 9,
+      "frames_skipped": 32,
+      "skip_ratio_pct": 78.0,
+      "mean_inference_latency_ms": 170.3
+    },
+    {
+      "requested_speed": 2.0,
+      "achieved_speed": 1.06,
+      "speed_accuracy_pct": 52.8,
+      "effective_fps": 31.7,
+      "processing_fps": 5.2,
+      "frames_processed": 7,
+      "frames_skipped": 36,
+      "skip_ratio_pct": 83.7,
+      "mean_inference_latency_ms": 173.3
+    },
+    {
+      "requested_speed": 3.0,
+      "achieved_speed": 1.77,
+      "speed_accuracy_pct": 59.0,
+      "effective_fps": 53.1,
+      "processing_fps": 6.5,
+      "frames_processed": 5,
+      "frames_skipped": 36,
+      "skip_ratio_pct": 87.8,
+      "mean_inference_latency_ms": 130.7
+    },
+    {
+      "requested_speed": 5.0,
+      "achieved_speed": 1.98,
+      "speed_accuracy_pct": 39.6,
+      "effective_fps": 59.4,
+      "processing_fps": 4.8,
+      "frames_processed": 4,
+      "frames_skipped": 45,
+      "skip_ratio_pct": 91.8,
+      "mean_inference_latency_ms": 174.0
+    }
+  ]
+}

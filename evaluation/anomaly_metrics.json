@@ -1,0 +1,80 @@
+{
+  "evaluation_scope": "Independent Ground-Truth Video Event Anomaly Evaluation",
+  "total_ground_truth_events": 20,
+  "anomaly_categories": {
+    "WRONG_DIRECTION": {
+      "true_positives": 6,
+      "false_positives": 4,
+      "false_negatives": 2,
+      "true_negatives": 8,
+      "accuracy": 0.7,
+      "precision": 0.6,
+      "recall": 0.75,
+      "specificity": 0.6667,
+      "f1_score": 0.6667,
+      "false_alarm_rate": 0.3333,
+      "missed_anomaly_rate": 0.25,
+      "average_delay_seconds": 0.233,
+      "average_delay_frames": 7.0,
+      "support_events": 8
+    },
+    "PROLONGED_STOPPING": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 5,
+      "true_negatives": 15,
+      "accuracy": 0.75,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0,
+      "f1_score": 0.0,
+      "false_alarm_rate": 0.0,
+      "missed_anomaly_rate": 1.0,
+      "average_delay_seconds": 0.0,
+      "average_delay_frames": 0.0,
+      "support_events": 5
+    },
+    "NORMAL": {
+      "true_positives": 6,
+      "false_positives": 4,
+      "false_negatives": 1,
+      "true_negatives": 9,
+      "accuracy": 0.75,
+      "precision": 0.6,
+      "recall": 0.8571,
+      "specificity": 0.6923,
+      "f1_score": 0.7059,
+      "false_alarm_rate": 0.3077,
+      "missed_anomaly_rate": 0.1429,
+      "average_delay_seconds": 0.0,
+      "average_delay_frames": 0.0,
+      "support_events": 7
+    }
+  },
+  "macro_average_f1": 0.4575,
+  "weighted_average_f1": 0.5137,
+  "confusion_matrix": {
+    "labels": [
+      "NORMAL",
+      "WRONG_DIRECTION",
+      "PROLONGED_STOPPING"
+    ],
+    "matrix": [
+      [
+        6,
+        1,
+        0
+      ],
+      [
+        2,
+        6,
+        0
+      ],
+      [
+        2,
+        3,
+        0
+      ]
+    ]
+  }
+}

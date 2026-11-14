@@ -1,0 +1,84 @@
+{
+  "model": "YOLO11n Fine-Tuned (weights/aegis_yolo11n_crowdhuman.pt)",
+  "crowdhuman_validation_metrics": {
+    "dataset": "CrowdHuman Validation Dataset",
+    "training_epochs": 45,
+    "validation_images": 4370,
+    "validation_instances": 99481,
+    "classes": [
+      "person"
+    ],
+    "checkpoint_precision": 0.8475,
+    "checkpoint_recall": 0.7141,
+    "checkpoint_f1": 0.7751,
+    "checkpoint_map50": 0.826,
+    "checkpoint_map50_95": 0.509,
+    "val_box_loss": 1.2327,
+    "val_cls_loss": 0.7127
+  },
+  "surveillance_gt_evaluation": {
+    "dataset": "AEGIS Curated Surveillance GT (15 frames, 431 instances)",
+    "profiles": [
+      {
+        "profile": "Performance",
+        "image_size": 640,
+        "confidence_threshold": 0.22,
+        "nms_iou_threshold": 0.5,
+        "evaluation_iou": 0.5,
+        "tp": 252,
+        "fp": 50,
+        "fn": 179,
+        "precision": 0.8344,
+        "recall": 0.5847,
+        "f1_score": 0.6876,
+        "latency_ms": 399.01,
+        "fps": 2.5,
+        "scale_breakdown": {
+          "small": 0.2857,
+          "medium": 0.5697,
+          "large": 0.7736
+        }
+      },
+      {
+        "profile": "Balanced",
+        "image_size": 800,
+        "confidence_threshold": 0.15,
+        "nms_iou_threshold": 0.55,
+        "evaluation_iou": 0.5,
+        "tp": 267,
+        "fp": 65,
+        "fn": 164,
+        "precision": 0.8042,
+        "recall": 0.6195,
+        "f1_score": 0.6999,
+        "latency_ms": 112.38,
+        "fps": 8.9,
+        "scale_breakdown": {
+          "small": 0.25,
+          "medium": 0.5902,
+          "large": 0.805
+        }
+      },
+      {
+        "profile": "Accuracy",
+        "image_size": 960,
+        "confidence_threshold": 0.1,
+        "nms_iou_threshold": 0.55,
+        "evaluation_iou": 0.5,
+        "tp": 280,
+        "fp": 90,
+        "fn": 151,
+        "precision": 0.7568,
+        "recall": 0.6497,
+        "f1_score": 0.6991,
+        "latency_ms": 140.82,
+        "fps": 7.1,
+        "scale_breakdown": {
+          "small": 0.2857,
+          "medium": 0.6557,
+          "large": 0.7862
+        }
+      }
+    ]
+  }
+}

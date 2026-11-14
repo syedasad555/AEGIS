@@ -1,0 +1,21 @@
+video_name,track_id,start_frame,end_frame,start_time_sec,end_time_sec,expected_direction,actual_movement,gt_anomaly_category,description
+evacuation_test_corridor.avi,1,1,100,0.03,3.33,LEFT,STATIONARY,PROLONGED_STOPPING,Stationary pedestrian remaining stationary in corridor flow
+evacuation_test_corridor.avi,2,1,120,0.03,4.00,LEFT,STATIONARY,PROLONGED_STOPPING,Stationary bystander obstructing primary egress
+evacuation_test_corridor.avi,6,1,115,0.03,3.83,LEFT,STATIONARY,PROLONGED_STOPPING,Stationary occupant standing in corridor flow
+evacuation_test_corridor.avi,9,17,48,0.57,1.60,LEFT,DOWN,WRONG_DIRECTION,Pedestrian moving orthogonal/counterflow (DOWN) against expected LEFT
+evacuation_test_corridor.avi,11,47,60,1.57,2.00,LEFT,DOWN,WRONG_DIRECTION,Pedestrian moving counterflow (DOWN) against expected LEFT
+evacuation_test_corridor.avi,13,65,78,2.17,2.60,LEFT,DOWN,WRONG_DIRECTION,High-speed counterflow traversal DOWN against expected LEFT
+evacuation_test_corridor.avi,15,85,90,2.83,3.00,LEFT,DOWN_RIGHT,WRONG_DIRECTION,Counterflow crossing DOWN_RIGHT
+evacuation_test_corridor.avi,16,85,90,2.83,3.00,LEFT,DOWN,WRONG_DIRECTION,Rapid counterflow movement DOWN
+evacuation_test_corridor.avi,25,102,120,3.40,4.00,LEFT,UP,WRONG_DIRECTION,Counterflow movement UP against expected LEFT
+evacuation_test_corridor.avi,3,1,100,0.03,3.33,LEFT,LEFT,NORMAL,Pedestrian moving in correct evacuation direction
+evacuation_test_corridor.avi,4,1,108,0.03,3.60,LEFT,LEFT,NORMAL,Normal compliant flow moving LEFT
+evacuation_test_corridor.avi,7,1,118,0.03,3.93,LEFT,LEFT,NORMAL,Normal evacuation traversal toward exit
+running.mp4,1,1,80,0.03,2.67,RIGHT,RIGHT,NORMAL,Compliant pedestrian running toward right evacuation exit
+running.mp4,2,1,120,0.03,4.00,RIGHT,RIGHT,NORMAL,Pedestrian flowing in expected direction RIGHT
+running.mp4,3,10,150,0.33,5.00,RIGHT,LEFT,WRONG_DIRECTION,Pedestrian running counterflow (LEFT) against expected RIGHT flow
+running.mp4,5,30,190,1.00,6.33,RIGHT,STATIONARY,PROLONGED_STOPPING,Pedestrian halting and remaining motionless during evacuation
+intrusion.mp4,1,1,200,0.04,8.00,RIGHT,RIGHT,NORMAL,Pedestrian walking rightwards along perimeter flow lane
+intrusion.mp4,4,20,180,0.80,7.20,RIGHT,RIGHT,NORMAL,Pedestrian continuing compliant rightward egress
+intrusion.mp4,8,40,160,1.60,6.40,RIGHT,LEFT,WRONG_DIRECTION,Pedestrian reversing course counterflow towards restricted area
+intrusion.mp4,12,50,220,2.00,8.80,RIGHT,STATIONARY,PROLONGED_STOPPING,Prolonged stopping observed adjacent to access gate

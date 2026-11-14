@@ -386,16 +386,20 @@ class DirectionEstimator:
         dy = recent[-1][1] - recent[0][1]
         disp = math.hypot(dx, dy)
 
+        # Directional consistency: ratio of net displacement to total path length.
+        # Genuine locomotion has high consistency (>= 0.60). Bounding box jitter
+        # on stationary pedestrians oscillates back and forth, giving low consistency (< 0.45).
+        path_len = sum(
+            math.hypot(recent[i][0] - recent[i - 1][0], recent[i][1] - recent[i - 1][1])
+            for i in range(1, len(recent))
+        )
+        consistency = disp / max(1.0, path_len)
+
         # Adaptive observation window check:
         # If we have fewer than standard min_obs (e.g. 4 or 5 frames), only confirm
         # if the track shows clear, continuous directional displacement without zigzag/jitter.
         is_fast_confirmed = False
         if len(hist) < self.min_obs:
-            path_len = sum(
-                math.hypot(recent[i][0] - recent[i - 1][0], recent[i][1] - recent[i - 1][1])
-                for i in range(1, len(recent))
-            )
-            consistency = disp / max(1.0, path_len)
             if disp >= self.fast_disp_px and consistency >= 0.70:
                 is_fast_confirmed = True
             else:
@@ -411,9 +415,31 @@ class DirectionEstimator:
         out["displacement_px"] = round(disp, 2)
         out["speed_px_sec"] = round(speed, 2)
         out["direction_vector"] = [round(dx, 2), round(dy, 2)]
+        out["consistency"] = round(consistency, 3)
 
         min_req_disp = min(self.min_disp_px, self.fast_disp_px) if is_fast_confirmed else self.min_disp_px
-        if disp < min_req_disp or speed < self.min_speed_px_s:
+        
+        # Stationary check: sub-threshold displacement, low speed, or low directional consistency
+        # when displacement is moderate (preventing stationary jitter from becoming a false direction)
+        is_stationary = (
+            disp < min_req_disp
+            or speed < self.min_speed_px_s
+            or (disp < 20.0 and consistency < 0.42 and not is_fast_confirmed)
+        )
+
+        # Long-horizon check: if a track has >= 16 frames of history, genuine locomotion
+        # must show displacement growth over time. Jitter / sway stays bounded (< 18px, < 15px/s).
+        if not is_stationary and len(hist) >= 16 and not is_fast_confirmed:
+            long_recent = list(hist)[-min(len(hist), 24):]
+            long_dx = long_recent[-1][0] - long_recent[0][0]
+            long_dy = long_recent[-1][1] - long_recent[0][1]
+            long_disp = math.hypot(long_dx, long_dy)
+            long_dt = max(0.1, float(long_recent[-1][3] - long_recent[0][3]))
+            long_speed = long_disp / long_dt
+            if long_disp < 18.0 or long_speed < 15.0:
+                is_stationary = True
+
+        if is_stationary:
             out["direction"] = "STATIONARY"
             out["movement_status"] = "STATIONARY"
             out["direction_confidence"] = min(1.0, disp / max(self.min_disp_px, 1.0) * 0.3)

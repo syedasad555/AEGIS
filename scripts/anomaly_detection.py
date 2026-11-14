@@ -264,6 +264,23 @@ class EvacuationAnomalyEngine:
                 self._resolve_event(ev_key, ts)
             return None
 
+        # Guard: If pedestrian is stationary or has accumulated stopping frames,
+        # they must NOT be flagged as WRONG_DIRECTION on random noise jitter.
+        stop_frames = int(f.get("stopping_duration_frames", 0))
+        is_stationary = (
+            f.get("movement_status") == "STATIONARY"
+            or clf.get("actual_direction") == "STATIONARY"
+            or stop_frames >= 12
+        )
+        if is_stationary:
+            self.wrong_dir_counters[tid] = 0
+            if ev_key in self.active_events:
+                self.recovery_counters[tid] += 1
+                if self.recovery_counters[tid] >= 2:
+                    self._resolve_event(ev_key, ts)
+                    self.recovery_counters[tid] = 0
+            return None
+
         classification = clf["classification"]
 
         if classification == "NORMAL":

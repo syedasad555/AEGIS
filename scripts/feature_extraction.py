@@ -207,6 +207,7 @@ class TrajectoryFeatureExtractor:
         self.dir_estimator = DirectionEstimator(config)
         self.stopping_counters: Dict[int, int] = defaultdict(int)
         self.stop_start_timestamps: Dict[int, float] = {}
+        self.moving_streaks: Dict[int, int] = defaultdict(int)
         self.histories = self.dir_estimator.raw_hist  # shared for twin trails / tests
         self.corridor = EvacuationCorridor(config)
         self.zone_manager = ZoneManager(config.get("zones") or {})
@@ -218,6 +219,7 @@ class TrajectoryFeatureExtractor:
         self.dir_estimator.reset()
         self.stopping_counters.clear()
         self.stop_start_timestamps.clear()
+        self.moving_streaks.clear()
         self.export_records.clear()
 
     def expire_stale_tracks(self, frame_idx: int):
@@ -252,16 +254,25 @@ class TrajectoryFeatureExtractor:
         )
         if is_stopped:
             self.stopping_counters[track_id] += 1
+            self.moving_streaks[track_id] = 0
             if track_id not in self.stop_start_timestamps:
                 self.stop_start_timestamps[track_id] = timestamp
             stop_elapsed_sec = max(0.0, timestamp - self.stop_start_timestamps[track_id])
             stopping_sec = max(stop_elapsed_sec, self.stopping_counters[track_id] / max(fps, 1.0))
             stopping_duration = max(self.stopping_counters[track_id], int(round(stopping_sec * fps)))
         else:
-            self.stopping_counters[track_id] = 0
-            self.stop_start_timestamps.pop(track_id, None)
-            stopping_duration = 0
-            stopping_sec = 0.0
+            self.moving_streaks[track_id] += 1
+            # Hysteresis: only reset stopping accumulation if moving genuinely for >= 5 consecutive frames
+            if self.moving_streaks[track_id] >= 5:
+                self.stopping_counters[track_id] = 0
+                self.stop_start_timestamps.pop(track_id, None)
+                stopping_duration = 0
+                stopping_sec = 0.0
+            else:
+                # Retain accumulated stopping duration during brief 1-4 frame jitter
+                stop_elapsed_sec = max(0.0, timestamp - self.stop_start_timestamps.get(track_id, timestamp))
+                stopping_sec = max(stop_elapsed_sec, self.stopping_counters[track_id] / max(fps, 1.0))
+                stopping_duration = max(self.stopping_counters[track_id], int(round(stopping_sec * fps)))
 
         in_corridor = self.corridor.contains(raw_fx, raw_fy)
         zone_type = "EVACUATION_CORRIDOR" if in_corridor else "OUTSIDE_CORRIDOR"

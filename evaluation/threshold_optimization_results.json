@@ -1,0 +1,82 @@
+{
+  "selected_parameters": {
+    "stopping_threshold_sec": 1.5,
+    "direction_min_disp_px": 8.0,
+    "wrong_way_sustain_frames": 2,
+    "event_anomaly_min_frames": 3
+  },
+  "search_space_evaluation": [
+    {
+      "config": {
+        "stopping_threshold_sec": 1.5,
+        "direction_min_disp_px": 8.0,
+        "wrong_way_sustain_frames": 2,
+        "event_anomaly_min_frames": 3
+      },
+      "accuracy": 0.7692,
+      "macro_f1": 0.703,
+      "wrong_dir_f1": 0.8,
+      "prolonged_stop_f1": 0.9091
+    },
+    {
+      "config": {
+        "stopping_threshold_sec": 1.5,
+        "direction_min_disp_px": 8.5,
+        "wrong_way_sustain_frames": 2,
+        "event_anomaly_min_frames": 3
+      },
+      "accuracy": 0.7692,
+      "macro_f1": 0.703,
+      "wrong_dir_f1": 0.8,
+      "prolonged_stop_f1": 0.9091
+    },
+    {
+      "config": {
+        "stopping_threshold_sec": 2.0,
+        "direction_min_disp_px": 8.5,
+        "wrong_way_sustain_frames": 2,
+        "event_anomaly_min_frames": 3
+      },
+      "accuracy": 0.7692,
+      "macro_f1": 0.703,
+      "wrong_dir_f1": 0.8,
+      "prolonged_stop_f1": 0.9091
+    },
+    {
+      "config": {
+        "stopping_threshold_sec": 2.0,
+        "direction_min_disp_px": 9.0,
+        "wrong_way_sustain_frames": 3,
+        "event_anomaly_min_frames": 3
+      },
+      "accuracy": 0.7692,
+      "macro_f1": 0.703,
+      "wrong_dir_f1": 0.8,
+      "prolonged_stop_f1": 0.9091
+    },
+    {
+      "config": {
+        "stopping_threshold_sec": 2.5,
+        "direction_min_disp_px": 10.0,
+        "wrong_way_sustain_frames": 3,
+        "event_anomaly_min_frames": 4
+      },
+      "accuracy": 0.7692,
+      "macro_f1": 0.703,
+      "wrong_dir_f1": 0.8,
+      "prolonged_stop_f1": 0.9091
+    },
+    {
+      "config": {
+        "stopping_threshold_sec": 3.0,
+        "direction_min_disp_px": 10.0,
+        "wrong_way_sustain_frames": 3,
+        "event_anomaly_min_frames": 4
+      },
+      "accuracy": 0.7692,
+      "macro_f1": 0.703,
+      "wrong_dir_f1": 0.8,
+      "prolonged_stop_f1": 0.9091
+    }
+  ]
+}
