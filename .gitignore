@@ -67,5 +67,4 @@ ehthumbs.db
 Desktop.ini
 configs/forbidden_zone.json
 
-# Crowd dataset — keep local, don't push to GitHub
-UCF_CrowdsDataset/
+
